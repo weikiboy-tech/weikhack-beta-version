@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "package": "com.example.weikhack.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ChestBlockEntityRendererMixin",
+    "ClientPlayNetworkHandlerMixin",
+    "EntityAccessor",
+    "EntityGlowingMixin",
+    "EntityTeamColorMixin",
+    "InGameHudMixin",
+    "MinecraftClientMixin",
+    "RenderLayerAccessor",
+    "RenderPipelinesAccessor",
+    "WorldRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
