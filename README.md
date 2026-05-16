@@ -1,40 +1,46 @@
 # Weikhack Beta Version 0.0.1
 
-Weikhack Beta Version 0.0.1 ist ein externer Fabric Client-Mod für Minecraft 1.21.11. Der Mod wird einfach als normale `.jar` in den Minecraft `mods`-Ordner gelegt und kann dadurch zusammen mit anderen Fabric-Mods genutzt werden, zum Beispiel Cinematica oder weiteren Client-Erweiterungen.
+Weikhack Beta Version 0.0.1 ist ein externer Fabric Client-Mod fuer Minecraft 1.21.11. Der Mod wird einfach als normale `.jar` in den Minecraft `mods`-Ordner gelegt und kann dadurch zusammen mit anderen Fabric-Mods genutzt werden, zum Beispiel Cinematica oder weiteren Client-Erweiterungen.
 
 ## Features
 
-- Modernes Ingame-UI über `Right Shift`
+- Modernes Ingame-UI ueber `Right Shift`
 - Movement-Module wie Flight, Speed und NoFall
 - Render-Module wie Player ESP und Storage/Chest ESP
-- Combat-Module wie NoKnockback und KillAura für Mobs und optional Spieler
+- Combat-Module wie NoKnockback und KillAura fuer Mobs und optional Spieler
 - Chat-Befehle wie `.help`, `.bind`, `.unbind`, `.clearbinds` und `.speed`
-- Standard-Binds: `F` für Flight, `N` für NoFall, `R` für KillAura
+- Standard-Binds: `F` fuer Flight, `N` fuer NoFall, `R` fuer KillAura
 
 ## Installation
 
-1. Fabric Loader für Minecraft 1.21.11 installieren.
-2. Die aktuelle `weikhack-beta-version-0.0.1.jar` aus dem Ordner `releases/` herunterladen.
+1. Fabric Loader fuer Minecraft 1.21.11 installieren.
+2. Die neueste Jar aus dem GitHub-Actions-Artefakt `weikhack-beta-version-latest` herunterladen.
 3. Die Jar in den Minecraft `mods`-Ordner legen.
 4. Minecraft mit dem Fabric-Profil starten.
 
-Fabric API wird aktuell nicht als Pflicht-Abhängigkeit benötigt.
-
-## Kompatibilität
-
-Weikhack ist als externer Fabric-Mod gedacht. Dadurch kann er parallel zu Cinematica und anderen Fabric-Mods genutzt werden, solange diese ebenfalls zur Minecraft-Version 1.21.11 passen und keine direkten Konflikte mit denselben Minecraft-Klassen verursachen.
+Fabric API wird aktuell nicht als Pflicht-Abhaengigkeit benoetigt.
 
 ## Download
 
-Die jeweils hochgeladene Jar liegt im Ordner `releases/` dieses Repositories.
+Die oeffentliche Version liegt hier im Repository. Unter `Actions` baut der Workflow bei jedem Upload automatisch die aktuelle Jar und stellt sie als Artefakt `weikhack-beta-version-latest` bereit.
+
+## Kompatibilitaet
+
+Weikhack ist als externer Fabric-Mod gedacht. Dadurch kann er parallel zu Cinematica und anderen Fabric-Mods genutzt werden, solange diese ebenfalls zur Minecraft-Version 1.21.11 passen und keine direkten Konflikte mit denselben Minecraft-Klassen verursachen.
 
 ## Build
+
+Lokal im Projekt:
 
 ```powershell
 .\.gradle-local\gradle-9.2.1\bin\gradle.bat clean build
 ```
 
-Oder auf GitHub über den Actions-Workflow.
+Auf GitHub nutzt der Workflow:
+
+```bash
+gradle clean build
+```
 
 Die fertige Jar liegt danach in:
 
@@ -46,4 +52,4 @@ build/libs/
 
 Erstellt von Weik.
 
-Verbesserungsvorschläge, Ideen und Bug-Reports sind ausdrücklich willkommen. Bitte schreib dazu möglichst genau, was du impelemtiert haben willst.
+Verbesserungsvorschlaege, Ideen und Bug-Reports sind ausdruecklich willkommen. Bitte schreib dazu moeglichst genau, welche Minecraft-Version du nutzt, welche weiteren Mods aktiv sind und was im Spiel passiert ist.
