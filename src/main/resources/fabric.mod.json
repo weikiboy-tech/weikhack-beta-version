@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "id": "weikhack",
-  "version": "0.0.4",
-  "name": "Weikhack",
-  "description": "Weikhack Beta Version 0.0.4 client mod.",
+  "version": "0.0.5",
+  "name": "Weikhack Beta Version 0.0.5",
+  "description": "Weikhack Beta Version 0.0.5 client UI with movement, render, combat and chat utility modules.",
   "authors": ["Weik"],
   "contact": {},
-  "license": "All-Rights-Reserved",
+  "license": "MIT",
   "environment": "client",
   "entrypoints": {
     "client": [
