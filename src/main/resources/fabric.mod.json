@@ -1,14 +1,12 @@
 {
   "schemaVersion": 1,
   "id": "weikhack",
-  "version": "${version}",
-  "name": "Weikhack Beta Version 0.0.1",
-  "description": "Weikhack Beta Version 0.0.1 client UI with movement, render, combat and chat utility modules.",
-  "authors": [
-    "Weik"
-  ],
+  "version": "0.0.4",
+  "name": "Weikhack",
+  "description": "Weikhack Beta Version 0.0.4 client mod.",
+  "authors": ["Weik"],
   "contact": {},
-  "license": "MIT",
+  "license": "All-Rights-Reserved",
   "environment": "client",
   "entrypoints": {
     "client": [
@@ -20,6 +18,7 @@
   ],
   "depends": {
     "fabricloader": ">=0.18.4",
-    "minecraft": "1.21.11"
+    "minecraft": "1.21.11",
+    "java": ">=21"
   }
 }
