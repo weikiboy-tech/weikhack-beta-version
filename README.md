@@ -4,10 +4,10 @@ Weikhack Beta Version 0.0.1 ist ein externer Fabric Client-Mod für Minecraft 1.
 
 ## Features
 
-- Modernes Ingame-UI ueber `Right Shift`
+- Modernes Ingame-UI über `Right Shift`
 - Movement-Module wie Flight, Speed und NoFall
 - Render-Module wie Player ESP und Storage/Chest ESP
-- Combat-Module wie NoKnockback und KillAura fuer Mobs und optional Spieler
+- Combat-Module wie NoKnockback und KillAura für Mobs und optional Spieler
 - Chat-Befehle wie `.help`, `.bind`, `.unbind`, `.clearbinds` und `.speed`
 - Standard-Binds: `F` für Flight, `N` für NoFall, `R` für KillAura
 
