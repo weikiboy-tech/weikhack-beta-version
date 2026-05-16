@@ -1,10 +1,16 @@
 # Downloads
 
-Die aktuelle Jar wird automatisch durch GitHub Actions gebaut.
+Die aktuelle veröffentlichte Jar liegt direkt in diesem Ordner:
 
-1. Repo oeffnen: https://github.com/weikiboy-tech/weikhack-beta-version
+```text
+weikhack-beta-version-0.0.4.jar
+```
+
+Alternativ wird die Jar automatisch durch GitHub Actions gebaut.
+
+1. Repo öffnen: https://github.com/weikiboy-tech/weikhack-beta-version
 2. Oben auf `Actions` klicken.
-3. Den neuesten erfolgreichen Build oeffnen.
+3. Den neuesten erfolgreichen Build öffnen.
 4. Das Artefakt `weikhack-beta-version-latest` herunterladen.
 
 Die Jar kommt danach in den Minecraft `mods`-Ordner.
