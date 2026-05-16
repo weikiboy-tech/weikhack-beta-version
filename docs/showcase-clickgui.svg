@@ -1,103 +1,109 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="Weikhack ClickGUI Beta Version 0.0.11">
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1009" viewBox="0 0 1920 1009" role="img" aria-label="Weikhack ClickGUI Beta Version 0.0.11">
   <defs>
     <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
-      <stop offset="0" stop-color="#587ba8"/>
-      <stop offset="0.42" stop-color="#456d99"/>
-      <stop offset="1" stop-color="#162534"/>
+      <stop offset="0" stop-color="#4e75a2"/>
+      <stop offset="0.36" stop-color="#5078a6"/>
+      <stop offset="0.58" stop-color="#3f6b88"/>
+      <stop offset="1" stop-color="#122336"/>
     </linearGradient>
     <linearGradient id="water" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0" stop-color="#12465a"/>
-      <stop offset="0.55" stop-color="#1c7c84"/>
-      <stop offset="1" stop-color="#07151c"/>
+      <stop offset="0" stop-color="#183d6d"/>
+      <stop offset="0.52" stop-color="#1f7c82"/>
+      <stop offset="1" stop-color="#0b1f32"/>
     </linearGradient>
     <filter id="blur">
-      <feGaussianBlur stdDeviation="5"/>
+      <feGaussianBlur stdDeviation="8"/>
     </filter>
-    <filter id="panelShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000" flood-opacity="0.42"/>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity="0.5"/>
     </filter>
     <style>
-      .mono { font-family: Consolas, "Courier New", monospace; }
-      .white { fill: #f1fffb; }
-      .muted { fill: #82929a; }
-      .mint { fill: #00d5af; }
-      .on { fill: #6ee7b7; }
-      .panel { fill: #071014; opacity: 0.96; stroke: #223640; stroke-width: 3; }
-      .head { fill: #05c2a3; }
-      .active { fill: #0b4a3f; opacity: 0.92; }
+      .font { font-family: Consolas, "Courier New", monospace; }
+      .title { fill: #00d9ad; font-size: 43px; }
+      .white { fill: #f3fffb; }
+      .muted { fill: #788b92; }
+      .mint { fill: #00d9ad; }
+      .on { fill: #71edbd; }
+      .panel { fill: #071014; opacity: 0.965; stroke: #223943; stroke-width: 4; }
+      .header { fill: #06c2a5; }
+      .active { fill: #0b463b; opacity: 0.95; }
     </style>
   </defs>
 
-  <rect width="1280" height="640" fill="url(#sky)"/>
-  <g filter="url(#blur)" opacity="0.84">
-    <path d="M0 360 C160 318 260 348 385 300 C555 235 700 335 850 286 C1040 225 1128 304 1280 254 L1280 640 L0 640 Z" fill="#263b33"/>
-    <path d="M0 440 C220 390 388 442 565 400 C742 358 920 438 1280 378 L1280 640 L0 640 Z" fill="url(#water)"/>
-    <rect x="420" y="570" width="72" height="40" fill="#1d272d"/>
-    <rect x="500" y="570" width="72" height="40" fill="#2a2e32"/>
-    <rect x="580" y="570" width="72" height="40" fill="#1d272d"/>
-    <rect x="660" y="570" width="72" height="40" fill="#2a2e32"/>
-    <rect x="740" y="570" width="72" height="40" fill="#1d272d"/>
+  <rect width="1920" height="1009" fill="url(#sky)"/>
+  <g filter="url(#blur)" opacity="0.86">
+    <path d="M0 518 C170 455 320 500 475 432 C650 355 830 455 1000 405 C1225 340 1405 400 1600 350 C1755 310 1852 355 1920 336 L1920 1009 L0 1009 Z" fill="#526c66"/>
+    <path d="M0 500 C180 455 300 506 430 470 C580 430 660 492 780 465 C945 425 1070 500 1225 462 C1420 415 1630 485 1920 430 L1920 1009 L0 1009 Z" fill="url(#water)"/>
+    <path d="M0 730 C290 680 525 725 760 690 C1055 645 1280 735 1920 650 L1920 1009 L0 1009 Z" fill="#09263b" opacity="0.44"/>
+    <rect x="615" y="878" width="86" height="58" fill="#19231d"/>
+    <rect x="712" y="878" width="86" height="58" fill="#2b2a1d"/>
+    <rect x="809" y="878" width="86" height="58" fill="#1c211d"/>
+    <rect x="906" y="878" width="86" height="58" fill="#292719"/>
+    <rect x="1003" y="878" width="86" height="58" fill="#1a211e"/>
+    <rect x="1100" y="878" width="86" height="58" fill="#28261a"/>
+    <rect x="1197" y="878" width="86" height="58" fill="#1b231f"/>
   </g>
-  <rect width="1280" height="640" fill="#05070b" opacity="0.22"/>
+  <rect width="1920" height="1009" fill="#06080c" opacity="0.18"/>
 
-  <text x="24" y="38" class="mono white" font-size="30">Weikhack</text>
-  <text x="168" y="38" class="mono mint" font-size="30">Beta Version 0.0.11</text>
-
-  <g class="mono" filter="url(#panelShadow)" font-size="27">
-    <g transform="translate(24 82)">
-      <rect class="panel" width="292" height="288"/>
-      <rect class="head" x="3" y="3" width="286" height="36"/>
-      <text class="white" x="146" y="30" text-anchor="middle" font-size="26">Player</text>
-      <text class="white" x="46" y="78">Chest Stealer</text><text class="muted" x="228" y="78">off</text>
-      <text class="white" x="46" y="124">Freecam</text><text class="muted" x="228" y="124">off</text>
-      <text class="white" x="46" y="170">AutoArmor</text><text class="muted" x="228" y="170">off</text>
-      <text class="white" x="46" y="216">AutoTotem</text><text class="muted" x="228" y="216">off</text>
-      <text class="white" x="46" y="262">FastPlace</text><text class="muted" x="228" y="262">off</text>
-    </g>
-
-    <g transform="translate(342 82)">
-      <rect class="panel" width="292" height="398"/>
-      <rect class="head" x="3" y="3" width="286" height="36"/>
-      <text class="white" x="146" y="30" text-anchor="middle" font-size="26">Movement</text>
-      <text class="white" x="46" y="78">Flight</text><text class="muted" x="228" y="78">off</text>
-      <text class="mint" x="18" y="124">+</text><text class="white" x="46" y="124">Speed</text><text class="muted" x="228" y="124">off</text>
-      <text class="white" x="46" y="170">NoFall</text><text class="muted" x="228" y="170">off</text>
-      <text class="white" x="46" y="216">NoVelo</text><text class="muted" x="228" y="216">off</text>
-      <text class="mint" x="18" y="262">+</text><text class="white" x="46" y="262">AutoSprint</text><text class="muted" x="228" y="262">off</text>
-      <text class="mint" x="18" y="308">+</text><text class="white" x="46" y="308">JumpHeight</text><text class="muted" x="228" y="308">off</text>
-      <text class="white" x="46" y="354">NoSlow</text><text class="muted" x="228" y="354">off</text>
-    </g>
-
-    <g transform="translate(660 82)">
-      <rect class="panel" width="292" height="312"/>
-      <rect class="head" x="3" y="3" width="286" height="36"/>
-      <text class="white" x="146" y="30" text-anchor="middle" font-size="26">Render</text>
-      <text class="white" x="46" y="78">Player ESP</text><text class="muted" x="228" y="78">off</text>
-      <text class="mint" x="18" y="124">+</text><text class="white" x="46" y="124">Chest ESP</text><text class="muted" x="228" y="124">off</text>
-      <text class="white" x="46" y="170">XRay</text><text class="muted" x="228" y="170">off</text>
-      <rect class="active" x="0" y="190" width="292" height="48"/>
-      <text class="white" x="46" y="224">HealthBars</text><text class="on" x="228" y="224">on</text>
-      <text class="white" x="46" y="270">FullBright</text><text class="muted" x="228" y="270">off</text>
-    </g>
-
-    <g transform="translate(978 82)">
-      <rect class="panel" width="278" height="132"/>
-      <rect class="head" x="3" y="3" width="272" height="36"/>
-      <text class="white" x="139" y="30" text-anchor="middle" font-size="26">Combat</text>
-      <text class="mint" x="18" y="78">+</text><text class="white" x="46" y="78">KillAura</text><text class="muted" x="228" y="78">off</text>
-      <text class="white" x="46" y="124">NoKnockback</text><text class="muted" x="228" y="124">off</text>
-    </g>
-
-    <g transform="translate(978 250)">
-      <rect class="panel" width="278" height="132"/>
-      <rect class="head" x="3" y="3" width="272" height="36"/>
-      <text class="white" x="139" y="30" text-anchor="middle" font-size="26">Misc</text>
-      <rect class="active" x="0" y="39" width="278" height="48"/>
-      <text class="white" x="46" y="78">Active List</text><text class="on" x="228" y="78">on</text>
-      <text class="mint" x="18" y="124">+</text><text class="white" x="46" y="124">Config</text><text class="muted" x="228" y="124">off</text>
-    </g>
+  <g class="font title">
+    <text x="31" y="57">Weikhack</text>
+    <text x="229" y="57">Beta Version 0.0.11</text>
   </g>
 
-  <rect x="24" y="578" width="180" height="38" fill="#0d423a" stroke="#00d5af" stroke-width="3"/>
-  <text x="114" y="605" text-anchor="middle" class="mono white" font-size="24">Alte UI</text>
+  <g class="font" filter="url(#shadow)">
+    <g transform="translate(32 113)">
+      <rect class="panel" width="439" height="414"/>
+      <rect class="header" x="4" y="4" width="431" height="50"/>
+      <text class="white" x="219" y="42" text-anchor="middle" font-size="40">Player</text>
+      <text class="white" x="70" y="104" font-size="39">Chest Stealer</text><text class="muted" x="374" y="104" font-size="37">off</text>
+      <text class="white" x="70" y="176" font-size="39">Freecam</text><text class="muted" x="374" y="176" font-size="37">off</text>
+      <text class="white" x="70" y="248" font-size="39">AutoArmor</text><text class="muted" x="374" y="248" font-size="37">off</text>
+      <text class="white" x="70" y="320" font-size="39">AutoTotem</text><text class="muted" x="374" y="320" font-size="37">off</text>
+      <text class="white" x="70" y="392" font-size="39">FastPlace</text><text class="muted" x="374" y="392" font-size="37">off</text>
+    </g>
+
+    <g transform="translate(504 113)">
+      <rect class="panel" width="440" height="558"/>
+      <rect class="header" x="4" y="4" width="432" height="50"/>
+      <text class="white" x="220" y="42" text-anchor="middle" font-size="40">Movement</text>
+      <text class="white" x="70" y="104" font-size="39">Flight</text><text class="muted" x="374" y="104" font-size="37">off</text>
+      <text class="mint" x="20" y="176" font-size="42">+</text><text class="white" x="70" y="176" font-size="39">Speed</text><text class="muted" x="374" y="176" font-size="37">off</text>
+      <text class="white" x="70" y="248" font-size="39">NoFall</text><text class="muted" x="374" y="248" font-size="37">off</text>
+      <text class="white" x="70" y="320" font-size="39">NoVelo</text><text class="muted" x="374" y="320" font-size="37">off</text>
+      <text class="mint" x="20" y="392" font-size="42">+</text><text class="white" x="70" y="392" font-size="39">AutoSprint</text><text class="muted" x="374" y="392" font-size="37">off</text>
+      <text class="mint" x="20" y="464" font-size="42">+</text><text class="white" x="70" y="464" font-size="39">JumpHeight</text><text class="muted" x="374" y="464" font-size="37">off</text>
+      <text class="white" x="70" y="536" font-size="39">NoSlow</text><text class="muted" x="374" y="536" font-size="37">off</text>
+    </g>
+
+    <g transform="translate(976 113)">
+      <rect class="panel" width="440" height="414"/>
+      <rect class="header" x="4" y="4" width="432" height="50"/>
+      <text class="white" x="220" y="42" text-anchor="middle" font-size="40">Render</text>
+      <text class="white" x="70" y="104" font-size="39">Player ESP</text><text class="muted" x="374" y="104" font-size="37">off</text>
+      <text class="mint" x="20" y="176" font-size="42">+</text><text class="white" x="70" y="176" font-size="39">Chest ESP</text><text class="muted" x="374" y="176" font-size="37">off</text>
+      <text class="white" x="70" y="248" font-size="39">XRay</text><text class="muted" x="374" y="248" font-size="37">off</text>
+      <text class="white" x="70" y="320" font-size="39">HealthBars</text><text class="muted" x="374" y="320" font-size="37">off</text>
+      <text class="white" x="70" y="392" font-size="39">FullBright</text><text class="muted" x="374" y="392" font-size="37">off</text>
+    </g>
+
+    <g transform="translate(1448 113)">
+      <rect class="panel" width="440" height="198"/>
+      <rect class="header" x="4" y="4" width="432" height="50"/>
+      <text class="white" x="220" y="42" text-anchor="middle" font-size="40">Combat</text>
+      <text class="mint" x="20" y="104" font-size="42">+</text><text class="white" x="70" y="104" font-size="39">KillAura</text><text class="muted" x="374" y="104" font-size="37">off</text>
+      <text class="white" x="70" y="176" font-size="39">NoKnockback</text><text class="muted" x="374" y="176" font-size="37">off</text>
+    </g>
+
+    <g transform="translate(1448 360)">
+      <rect class="panel" width="440" height="198"/>
+      <rect class="header" x="4" y="4" width="432" height="50"/>
+      <text class="white" x="220" y="42" text-anchor="middle" font-size="40">Misc</text>
+      <rect class="active" x="0" y="54" width="440" height="72"/>
+      <text class="white" x="70" y="104" font-size="39">Active List</text><text class="on" x="374" y="104" font-size="37">on</text>
+      <text class="mint" x="20" y="176" font-size="42">+</text><text class="white" x="70" y="176" font-size="39">Config</text><text class="muted" x="374" y="176" font-size="37">off</text>
+    </g>
+  </g>
+
+  <rect x="32" y="917" width="270" height="61" fill="#0c493e" stroke="#00d9ad" stroke-width="4"/>
+  <text x="167" y="963" text-anchor="middle" class="font white" font-size="37">Alte UI</text>
 </svg>
