@@ -47,8 +47,8 @@ public final class WeikhackCommands {
         send(client, ".clearbinds - löscht alle Binds");
         send(client, ".saveconfig - speichert Module, Optionen und Binds");
         send(client, ".speed <1.0-6.0> - setzt den Speed-Regler");
-        send(client, "Eigene Binds: .bind <modul> <taste>, z.B. .bind flight f");
-        send(client, "Module: flight, speed, nofall, noinertia, autosprint, jumpheight, esp, chestesp, fullbright, noknockback, killaura, cheststealer, freecam, activelist");
+        send(client, "Eigene Binds: .bind <modul> <taste>, z.B. .bind flight g");
+        send(client, "Module: flight, speed, nofall, novelo, autosprint, jumpheight, esp, chestesp, fullbright, noknockback, killaura, cheststealer, freecam, activelist");
     }
 
     private static void handleToggle(MinecraftClient client, String[] parts) {
@@ -124,14 +124,14 @@ public final class WeikhackCommands {
     }
 
     private static void showModules(MinecraftClient client) {
-        send(client, "Module: flight, speed, nofall, noinertia, autosprint, jumpheight, esp, chestesp, fullbright, noknockback, killaura, cheststealer, freecam, activelist");
+        send(client, "Module: flight, speed, nofall, novelo, autosprint, jumpheight, esp, chestesp, fullbright, noknockback, killaura, cheststealer, freecam, activelist");
         showBinds(client);
     }
 
     private static void showBinds(MinecraftClient client) {
         Map<String, Integer> binds = WeikhackMod.getKeyBinds();
         if (binds.isEmpty()) {
-            send(client, "Keine Binds gesetzt. Beispiel: .bind flight f");
+            send(client, "Keine Binds gesetzt. Beispiel: .bind flight g");
             return;
         }
 
