@@ -4,8 +4,10 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "ChestBlockEntityRendererMixin",
+    "ClientPlayerEntityMixin",
     "ClientPlayNetworkHandlerMixin",
     "EntityAccessor",
+    "EntityMixin",
     "EntityGlowingMixin",
     "EntityTeamColorMixin",
     "InGameHudMixin",
