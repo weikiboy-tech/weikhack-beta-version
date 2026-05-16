@@ -34,7 +34,7 @@ Die jeweils hochgeladene Jar liegt im Ordner `releases/` dieses Repositories.
 .\.gradle-local\gradle-9.2.1\bin\gradle.bat clean build
 ```
 
-Oder auf GitHub ueber den Actions-Workflow.
+Oder auf GitHub über den Actions-Workflow.
 
 Die fertige Jar liegt danach in:
 
