@@ -18,7 +18,7 @@ public final class WeikhackCommands {
         MinecraftClient client = MinecraftClient.getInstance();
         String trimmed = message.trim();
         if (trimmed.length() <= 1) {
-            send(client, "Tippe .help fuer Befehle.");
+            send(client, "Tippe .help für Befehle.");
             return true;
         }
 
@@ -30,6 +30,7 @@ public final class WeikhackCommands {
             case "bind", "b" -> handleBind(client, parts);
             case "unbind" -> handleUnbind(client, parts);
             case "clearbinds", "clearbind", "bindclear" -> handleClearBinds(client);
+            case "save", "saveconfig", "configsave" -> WeikhackMod.saveConfig(client, true);
             case "list", "modules" -> showModules(client);
             case "speed" -> handleSpeed(client, parts);
             case "reset" -> WeikhackMod.reset(client);
@@ -43,10 +44,11 @@ public final class WeikhackCommands {
         send(client, ".toggle <modul> - schaltet ein Modul um");
         send(client, ".bind <modul> <taste> - bindet ein Modul, z.B. .bind chestesp x");
         send(client, ".unbind <modul> - entfernt einen Bind");
-        send(client, ".clearbinds - loescht alle Binds");
+        send(client, ".clearbinds - löscht alle Binds");
+        send(client, ".saveconfig - speichert Module, Optionen und Binds");
         send(client, ".speed <1.0-6.0> - setzt den Speed-Regler");
-        send(client, "Standard-Binds: F=flight, N=nofall, R=killaura");
-        send(client, "Module: flight, speed, nofall, esp, chestesp, noknockback, killaura, activelist");
+        send(client, "Eigene Binds: .bind <modul> <taste>, z.B. .bind flight f");
+        send(client, "Module: flight, speed, nofall, esp, chestesp, fullbright, noknockback, killaura, activelist");
     }
 
     private static void handleToggle(MinecraftClient client, String[] parts) {
@@ -122,7 +124,7 @@ public final class WeikhackCommands {
     }
 
     private static void showModules(MinecraftClient client) {
-        send(client, "Module: flight, speed, nofall, esp, chestesp, noknockback, killaura, activelist");
+        send(client, "Module: flight, speed, nofall, esp, chestesp, fullbright, noknockback, killaura, activelist");
         showBinds(client);
     }
 
