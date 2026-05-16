@@ -46,4 +46,4 @@ build/libs/
 
 Erstellt von Weik.
 
-Verbesserungsvorschläge, Ideen und Bug-Reports sind ausdrücklich willkommen. Bitte schreib dazu möglichst genau, welche Minecraft-Version du nutzt, welche weiteren Mods aktiv sind und was im Spiel passiert ist.
+Verbesserungsvorschläge, Ideen und Bug-Reports sind ausdrücklich willkommen. Bitte schreib dazu möglichst genau, was du impelemtiert haben willst.
