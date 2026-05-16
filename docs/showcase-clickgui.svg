@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="Weikhack ClickGUI showcase">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0d1724"/>
+      <stop offset="0.48" stop-color="#243349"/>
+      <stop offset="1" stop-color="#0c1020"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" x2="1">
+      <stop offset="0" stop-color="#10151f"/>
+      <stop offset="0.5" stop-color="#2d2944"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#sky)"/>
+  <g filter="url(#blur)" opacity="0.72">
+    <path d="M0 385 C180 310 260 370 405 325 C560 275 745 360 870 295 C1040 210 1115 315 1280 230 L1280 640 L0 640 Z" fill="url(#ground)"/>
+    <path d="M55 430 L340 356 L605 410 L320 520 Z" fill="#34304d" opacity="0.72"/>
+    <path d="M690 425 L1045 350 L1265 400 L1000 545 Z" fill="#2a2e45" opacity="0.76"/>
+    <rect x="410" y="560" width="92" height="54" fill="#1e293b"/>
+    <rect x="510" y="560" width="92" height="54" fill="#252f3d"/>
+    <rect x="610" y="560" width="92" height="54" fill="#1e293b"/>
+    <rect x="710" y="560" width="92" height="54" fill="#252f3d"/>
+  </g>
+  <rect width="1280" height="640" fill="#05080c" opacity="0.36"/>
+
+  <text x="24" y="38" fill="#f4fffb" font-family="Consolas, monospace" font-size="27">Weikhack</text>
+  <text x="164" y="38" fill="#00d9ad" font-family="Consolas, monospace" font-size="27">Beta Version 0.0.10</text>
+
+  <g filter="url(#shadow)" font-family="Consolas, monospace">
+    <g transform="translate(32 130)">
+      <rect width="292" height="248" fill="#071014" opacity="0.94" stroke="#22323c" stroke-width="3"/>
+      <rect x="3" y="3" width="286" height="34" fill="#00c6a2"/>
+      <text x="146" y="28" text-anchor="middle" fill="#fff" font-size="22">Combat</text>
+      <text x="18" y="72" fill="#00d9ad" font-size="24">-</text>
+      <text x="48" y="72" fill="#f4fffb" font-size="24">KillAura</text>
+      <text x="230" y="72" fill="#6f828b" font-size="24">off</text>
+      <text x="26" y="116" fill="#91a4ad" font-size="22">+ Mobs</text>
+      <rect x="258" y="98" width="18" height="18" fill="#21303b"/>
+      <text x="26" y="158" fill="#91a4ad" font-size="22">+ Players</text>
+      <rect x="258" y="140" width="18" height="18" fill="#21303b"/>
+      <text x="48" y="208" fill="#f4fffb" font-size="24">NoKnockback</text>
+      <text x="230" y="208" fill="#6f828b" font-size="24">off</text>
+    </g>
+
+    <g transform="translate(354 130)">
+      <rect width="292" height="520" fill="#071014" opacity="0.94" stroke="#22323c" stroke-width="3"/>
+      <rect x="3" y="3" width="286" height="34" fill="#00c6a2"/>
+      <text x="146" y="28" text-anchor="middle" fill="#fff" font-size="22">Movement</text>
+      <text x="48" y="72" fill="#f4fffb" font-size="24">Flight</text>
+      <text x="230" y="72" fill="#6f828b" font-size="24">off</text>
+      <text x="18" y="116" fill="#00d9ad" font-size="24">-</text>
+      <text x="48" y="116" fill="#f4fffb" font-size="24">Speed</text>
+      <text x="230" y="116" fill="#6f828b" font-size="24">off</text>
+      <text x="28" y="150" fill="#91a4ad" font-size="20">1.0x</text>
+      <rect x="28" y="166" width="236" height="8" fill="#26323e"/>
+      <rect x="28" y="156" width="12" height="28" fill="#e6fffb"/>
+      <text x="48" y="226" fill="#f4fffb" font-size="24">NoFall</text>
+      <text x="230" y="226" fill="#6f828b" font-size="24">off</text>
+      <text x="48" y="272" fill="#f4fffb" font-size="24">NoVelo</text>
+      <text x="230" y="272" fill="#6f828b" font-size="24">off</text>
+      <text x="18" y="318" fill="#00d9ad" font-size="24">-</text>
+      <text x="48" y="318" fill="#f4fffb" font-size="24">AutoSprint</text>
+      <text x="230" y="318" fill="#6f828b" font-size="24">off</text>
+      <text x="28" y="360" fill="#91a4ad" font-size="22">+ WASD</text>
+      <rect x="258" y="342" width="18" height="18" fill="#21303b"/>
+      <text x="18" y="414" fill="#00d9ad" font-size="24">-</text>
+      <text x="48" y="414" fill="#f4fffb" font-size="24">JumpHeight</text>
+      <text x="230" y="414" fill="#6f828b" font-size="24">off</text>
+      <text x="28" y="448" fill="#91a4ad" font-size="20">1.0b</text>
+      <rect x="28" y="464" width="236" height="8" fill="#26323e"/>
+      <rect x="28" y="454" width="12" height="28" fill="#e6fffb"/>
+    </g>
+
+    <g transform="translate(676 130)">
+      <rect width="292" height="392" fill="#071014" opacity="0.94" stroke="#22323c" stroke-width="3"/>
+      <rect x="3" y="3" width="286" height="34" fill="#00c6a2"/>
+      <text x="146" y="28" text-anchor="middle" fill="#fff" font-size="22">Render</text>
+      <text x="48" y="72" fill="#f4fffb" font-size="24">Player ESP</text>
+      <text x="230" y="72" fill="#6f828b" font-size="24">off</text>
+      <text x="18" y="116" fill="#00d9ad" font-size="24">-</text>
+      <text x="48" y="116" fill="#f4fffb" font-size="24">Chest ESP</text>
+      <text x="230" y="116" fill="#6f828b" font-size="24">off</text>
+      <text x="26" y="160" fill="#91a4ad" font-size="22">+ Chests</text>
+      <rect x="258" y="142" width="18" height="18" fill="#21303b"/>
+      <text x="26" y="202" fill="#91a4ad" font-size="22">+ Trapped</text>
+      <rect x="258" y="184" width="18" height="18" fill="#21303b"/>
+      <text x="26" y="244" fill="#91a4ad" font-size="22">+ Ender</text>
+      <rect x="258" y="226" width="18" height="18" fill="#21303b"/>
+      <text x="26" y="286" fill="#91a4ad" font-size="22">+ Barrels</text>
+      <rect x="258" y="268" width="18" height="18" fill="#21303b"/>
+      <text x="26" y="328" fill="#91a4ad" font-size="22">+ Shulkers</text>
+      <rect x="258" y="310" width="18" height="18" fill="#21303b"/>
+      <text x="48" y="374" fill="#f4fffb" font-size="24">FullBright</text>
+      <text x="230" y="374" fill="#6f828b" font-size="24">off</text>
+    </g>
+
+    <g transform="translate(998 130)">
+      <rect width="250" height="132" fill="#071014" opacity="0.94" stroke="#22323c" stroke-width="3"/>
+      <rect x="3" y="3" width="244" height="34" fill="#00c6a2"/>
+      <text x="125" y="28" text-anchor="middle" fill="#fff" font-size="22">Player</text>
+      <text x="44" y="72" fill="#f4fffb" font-size="24">Chest Stealer</text>
+      <text x="198" y="72" fill="#6f828b" font-size="24">off</text>
+      <text x="44" y="116" fill="#f4fffb" font-size="24">Freecam</text>
+      <text x="198" y="116" fill="#6f828b" font-size="24">off</text>
+    </g>
+
+    <g transform="translate(998 300)">
+      <rect width="250" height="132" fill="#071014" opacity="0.94" stroke="#22323c" stroke-width="3"/>
+      <rect x="3" y="3" width="244" height="34" fill="#00c6a2"/>
+      <text x="125" y="28" text-anchor="middle" fill="#fff" font-size="22">Misc</text>
+      <text x="44" y="72" fill="#6ee7b7" font-size="24">Active List</text>
+      <text x="198" y="72" fill="#6ee7b7" font-size="24">on</text>
+      <text x="44" y="116" fill="#f4fffb" font-size="24">Config</text>
+      <text x="198" y="116" fill="#6f828b" font-size="24">off</text>
+    </g>
+  </g>
+
+  <rect x="24" y="580" width="180" height="38" fill="#0d423a" stroke="#00d9ad" stroke-width="3"/>
+  <text x="114" y="606" text-anchor="middle" fill="#e6fffb" font-family="Consolas, monospace" font-size="22">Alte UI</text>
+</svg>
