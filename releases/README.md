@@ -3,7 +3,7 @@
 Die aktuelle veröffentlichte Jar liegt direkt in diesem Ordner:
 
 ```text
-weikhack-beta-version-0.0.11.jar
+weikhack-beta-version-0.15.jar
 ```
 
 Alternativ wird die Jar automatisch durch GitHub Actions gebaut.
