@@ -12,6 +12,7 @@
     "MinecraftClientMixin",
     "RenderLayerAccessor",
     "RenderPipelinesAccessor",
+    "SimpleOptionAccessor",
     "WorldRendererMixin"
   ],
   "injectors": {
