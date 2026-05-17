@@ -18,14 +18,14 @@ public final class WeikhackCommands {
         MinecraftClient client = MinecraftClient.getInstance();
         String trimmed = message.trim();
         if (trimmed.length() <= 1) {
-            send(client, "Tippe .help für Befehle.");
+            send(client, "Tippe .help fuer Befehle.");
             return true;
         }
 
         String[] parts = trimmed.substring(1).split("\\s+");
         String command = parts[0].toLowerCase(Locale.ROOT);
         switch (command) {
-            case "help", "h", "?" -> showHelp(client);
+            case "help", "h", "?" -> showHelp(client, parts);
             case "toggle", "t" -> handleToggle(client, parts);
             case "bind", "b" -> handleBind(client, parts);
             case "unbind" -> handleUnbind(client, parts);
@@ -39,21 +39,54 @@ public final class WeikhackCommands {
         return true;
     }
 
-    private static void showHelp(MinecraftClient client) {
-        send(client, ".help - zeigt diese Hilfe");
-        send(client, ".toggle <modul> - schaltet ein Modul um");
-        send(client, ".bind <modul> <taste> - bindet ein Modul, z.B. .bind chestesp x");
-        send(client, ".unbind <modul> - entfernt einen Bind");
-        send(client, ".clearbinds - löscht alle Binds");
-        send(client, ".saveconfig - speichert Module, Optionen und Binds");
-        send(client, ".speed <1.0-6.0> - setzt den Speed-Regler");
-        send(client, "Eigene Binds: .bind <modul> <taste>, z.B. .bind flight g");
-        send(client, "Module: flight, speed, nofall, novelo, autosprint, jumpheight, esp, chestesp, fullbright, noknockback, killaura, cheststealer, freecam, activelist");
+    private static void showHelp(MinecraftClient client, String[] parts) {
+        if (parts.length >= 2) {
+            switch (parts[1].toLowerCase(Locale.ROOT)) {
+                case "modules", "module", "mods", "list" -> {
+                    showModules(client);
+                    return;
+                }
+                case "binds", "bind", "keys" -> {
+                    showBindHelp(client);
+                    return;
+                }
+                case "config", "save", "reset" -> {
+                    showConfigHelp(client);
+                    return;
+                }
+                default -> {
+                    send(client, "Unbekannte Hilfe-Seite: " + parts[1]);
+                    send(client, "Mehr: .help modules, .help binds, .help config");
+                    return;
+                }
+            }
+        }
+
+        send(client, "Weikhack Hilfe");
+        send(client, ".toggle <modul>  |  Modul an/aus");
+        send(client, ".bind <modul> <taste>  |  Taste setzen");
+        send(client, ".speed <1.0-6.0>  |  Speed einstellen");
+        send(client, "Mehr: .help modules, .help binds, .help config");
+    }
+
+    private static void showBindHelp(MinecraftClient client) {
+        send(client, "Binds");
+        send(client, ".bind <modul> <taste>");
+        send(client, "Beispiel: .bind flight g  |  .unbind flight");
+        send(client, ".bind list zeigt aktive Binds");
+        send(client, ".clearbinds loescht alle Binds");
+    }
+
+    private static void showConfigHelp(MinecraftClient client) {
+        send(client, "Config");
+        send(client, ".saveconfig speichert Module, Optionen und Binds");
+        send(client, ".reset setzt Module und Binds zurueck");
+        send(client, ".clearbinds loescht nur Binds");
     }
 
     private static void handleToggle(MinecraftClient client, String[] parts) {
         if (parts.length < 2) {
-            send(client, "Nutzung: .toggle <modul>");
+            send(client, ".toggle <modul>  |  Module: .help modules");
             return;
         }
 
@@ -72,7 +105,7 @@ public final class WeikhackCommands {
             return;
         }
         if (parts.length < 3) {
-            send(client, "Nutzung: .bind <modul> <taste>");
+            send(client, ".bind <modul> <taste>  |  Hilfe: .help binds");
             return;
         }
 
@@ -94,7 +127,7 @@ public final class WeikhackCommands {
 
     private static void handleUnbind(MinecraftClient client, String[] parts) {
         if (parts.length < 2) {
-            send(client, "Nutzung: .unbind <modul>");
+            send(client, ".unbind <modul>  |  Hilfe: .help binds");
             return;
         }
 
@@ -124,8 +157,11 @@ public final class WeikhackCommands {
     }
 
     private static void showModules(MinecraftClient client) {
-        send(client, "Module: flight, speed, nofall, novelo, autosprint, jumpheight, esp, chestesp, fullbright, noknockback, killaura, cheststealer, freecam, activelist");
-        showBinds(client);
+        send(client, "Movement: flight, speed, nofall, safewalk, novelo, autosprint, jumpheight, noslowdown");
+        send(client, "Render: esp, chestesp, xray, healthbars, fullbright, deathmarker");
+        send(client, "Combat: killaura, noknockback");
+        send(client, "Player: cheststealer, freecam, autoarmor, autototem, fastplace");
+        send(client, "Misc: activelist, fakelag");
     }
 
     private static void showBinds(MinecraftClient client) {
