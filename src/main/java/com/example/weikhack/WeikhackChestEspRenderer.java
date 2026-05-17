@@ -8,6 +8,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LayeringTransform;
 import net.minecraft.client.render.OutputTarget;
@@ -41,11 +42,19 @@ public final class WeikhackChestEspRenderer {
     private static final int BARREL_SCAN_RADIUS = 48;
     private static final int BARREL_SCAN_VERTICAL_RADIUS = 24;
     private static final long BARREL_SCAN_INTERVAL_TICKS = 10L;
+    private static final int XRAY_SCAN_RADIUS = 48;
+    private static final int XRAY_SCAN_VERTICAL_RADIUS = 32;
+    private static final long XRAY_SCAN_INTERVAL_TICKS = 20L;
     private static final ChestStyle NORMAL_CHEST = new ChestStyle(0xFF34F85A, "Chest");
     private static final ChestStyle TRAPPED_CHEST = new ChestStyle(0xFFFF5555, "Trapped Chest");
     private static final ChestStyle ENDER_CHEST = new ChestStyle(0xFFB66CFF, "Ender Chest");
     private static final ChestStyle BARREL = new ChestStyle(0xFFFFC857, "Barrel");
     private static final ChestStyle SHULKER = new ChestStyle(0xFF55D7FF, "Shulker");
+    private static final ChestStyle DIAMOND_ORE = new ChestStyle(0xFF55D7FF, "Diamond");
+    private static final ChestStyle GOLD_ORE = new ChestStyle(0xFFFFD166, "Gold");
+    private static final ChestStyle IRON_ORE = new ChestStyle(0xFFD8DEE9, "Iron");
+    private static final ChestStyle LAPIS_ORE = new ChestStyle(0xFF60A5FA, "Lapis");
+    private static final int DEATH_MARKER_COLOR = 0xFFFF4D6D;
     private static final RenderLayer CHEST_XRAY_LINES = createXrayLineLayer();
     private static final VoxelShape CHEST_BOX = VoxelShapes.cuboid(new Box(
             -BOX_PADDING,
@@ -56,15 +65,18 @@ public final class WeikhackChestEspRenderer {
             1.0D + BOX_PADDING
     ));
     private static final List<BlockPos> cachedBarrelPositions = new ArrayList<>();
+    private static final List<OreTarget> cachedOrePositions = new ArrayList<>();
     private static BlockPos lastBarrelScanCenter;
+    private static BlockPos lastXrayScanCenter;
     private static long nextBarrelScanTick;
+    private static long nextXrayScanTick;
 
     private WeikhackChestEspRenderer() {
     }
 
     public static void render(VertexConsumerProvider.Immediate vertexConsumers, MatrixStack matrices, WorldRenderState renderState) {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (!WeikhackMod.isChestEspEnabled() || client.world == null || client.player == null || renderState.cameraRenderState == null) {
+        if ((!WeikhackMod.isChestEspEnabled() && !WeikhackMod.isXrayEnabled() && !WeikhackMod.isHealthBarsEnabled()) || client.world == null || client.player == null || renderState.cameraRenderState == null) {
             return;
         }
 
@@ -74,23 +86,28 @@ public final class WeikhackChestEspRenderer {
         }
 
         VertexConsumer chestLines = vertexConsumers.getBuffer(CHEST_XRAY_LINES);
-        Set<BlockPos> renderedBarrels = new HashSet<>();
-        for (BlockEntity blockEntity : client.world.getBlockEntities()) {
-            ChestStyle style = styleFor(blockEntity);
-            if (style == null) {
-                continue;
+        if (WeikhackMod.isChestEspEnabled()) {
+            Set<BlockPos> renderedBarrels = new HashSet<>();
+            for (BlockEntity blockEntity : client.world.getBlockEntities()) {
+                ChestStyle style = styleFor(blockEntity);
+                if (style == null) {
+                    continue;
+                }
+
+                if (style == BARREL) {
+                    renderedBarrels.add(blockEntity.getPos());
+                }
+                double x = blockEntity.getPos().getX() - cameraPos.x;
+                double y = blockEntity.getPos().getY() - cameraPos.y;
+                double z = blockEntity.getPos().getZ() - cameraPos.z;
+                VertexRendering.drawOutline(matrices, chestLines, CHEST_BOX, x, y, z, style.color(), 5.0F);
             }
 
-            if (style == BARREL) {
-                renderedBarrels.add(blockEntity.getPos());
-            }
-            double x = blockEntity.getPos().getX() - cameraPos.x;
-            double y = blockEntity.getPos().getY() - cameraPos.y;
-            double z = blockEntity.getPos().getZ() - cameraPos.z;
-            VertexRendering.drawOutline(matrices, chestLines, CHEST_BOX, x, y, z, style.color(), 5.0F);
+            renderCachedBarrels(client, matrices, chestLines, cameraPos, renderedBarrels);
         }
 
-        renderCachedBarrels(client, matrices, chestLines, cameraPos, renderedBarrels);
+        renderXrayOres(client, matrices, chestLines, cameraPos);
+        renderPlayerHealthBars(client, matrices, vertexConsumers, chestLines, cameraPos);
         vertexConsumers.draw(CHEST_XRAY_LINES);
     }
 
@@ -109,7 +126,7 @@ public final class WeikhackChestEspRenderer {
 
     public static void renderHud(DrawContext context) {
         MinecraftClient client = MinecraftClient.getInstance();
-        if (!WeikhackMod.isChestEspEnabled() || client.world == null || client.player == null || client.textRenderer == null) {
+        if (client.world == null || client.player == null || client.textRenderer == null) {
             return;
         }
 
@@ -120,17 +137,21 @@ public final class WeikhackChestEspRenderer {
         double verticalFov = Math.toRadians(client.options.getFov().getValue());
         double focalLength = height / (2.0D * Math.tan(verticalFov / 2.0D));
 
-        for (BlockEntity blockEntity : client.world.getBlockEntities()) {
-            ChestStyle style = styleFor(blockEntity);
-            if (style == null) {
-                continue;
-            }
+        if (WeikhackMod.isChestEspEnabled()) {
+            for (BlockEntity blockEntity : client.world.getBlockEntities()) {
+                ChestStyle style = styleFor(blockEntity);
+                if (style == null) {
+                    continue;
+                }
 
-            if (style == BARREL) {
-                continue;
+                if (style == BARREL) {
+                    continue;
+                }
+                drawHudBoxForStorage(context, client, camera, cameraPos, focalLength, width, height, blockEntity.getPos(), style);
             }
-            drawHudBoxForStorage(context, client, camera, cameraPos, focalLength, width, height, blockEntity.getPos(), style);
         }
+
+        renderDeathMarkerHud(context, client, camera, cameraPos, focalLength, width, height);
     }
 
     private static ChestStyle styleFor(BlockEntity blockEntity) {
@@ -194,6 +215,117 @@ public final class WeikhackChestEspRenderer {
         }
     }
 
+    private static void renderXrayOres(MinecraftClient client, MatrixStack matrices, VertexConsumer lines, Vec3d cameraPos) {
+        if (!WeikhackMod.isXrayEnabled()) {
+            cachedOrePositions.clear();
+            return;
+        }
+
+        updateXrayCache(client);
+        for (OreTarget target : cachedOrePositions) {
+            if (oreStyle(client.world.getBlockState(target.pos())) == null) {
+                continue;
+            }
+
+            double x = target.pos().getX() - cameraPos.x;
+            double y = target.pos().getY() - cameraPos.y;
+            double z = target.pos().getZ() - cameraPos.z;
+            VertexRendering.drawOutline(matrices, lines, CHEST_BOX, x, y, z, target.style().color(), 4.0F);
+        }
+    }
+
+    private static void renderDeathMarker(MinecraftClient client, MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers, VertexConsumer lines, Vec3d cameraPos) {
+        if (!WeikhackMod.isDeathMarkerEnabled() || !WeikhackMod.hasDeathMarker() || !WeikhackMod.isLastDeathInCurrentDimension()) {
+            return;
+        }
+
+        Vec3d death = anchoredDeathPosition();
+        if (death == null) {
+            return;
+        }
+
+        double x = death.x - cameraPos.x;
+        double y = death.y - cameraPos.y;
+        double z = death.z - cameraPos.z;
+        drawDeathMarkerBox(matrices.peek(), lines, x, y, z);
+        drawDeathTracer(matrices, lines, death, cameraPos);
+
+        double distance = new Vec3d(client.player.getX(), client.player.getY(), client.player.getZ()).distanceTo(death);
+        drawWorldDeathLabel(client, matrices, vertexConsumers, cameraPos, death, "Death " + Math.round(distance) + "m");
+    }
+
+    private static void renderDeathMarkerHud(DrawContext context, MinecraftClient client, Camera camera, Vec3d cameraPos, double focalLength, int width, int height) {
+        if (!WeikhackMod.isDeathMarkerEnabled() || !WeikhackMod.hasDeathMarker()) {
+            return;
+        }
+
+        if (!WeikhackMod.isLastDeathInCurrentDimension()) {
+            String dimension = WeikhackMod.getLastDeathDimension();
+            String label = "Death: " + (dimension == null ? "other dimension" : dimension);
+            drawCenteredHudLabel(context, client, width / 2, 24, label, DEATH_MARKER_COLOR);
+            return;
+        }
+
+        Vec3d death = anchoredDeathPosition();
+        if (death == null) {
+            return;
+        }
+
+        double distance = new Vec3d(client.player.getX(), client.player.getY(), client.player.getZ()).distanceTo(death);
+        String label = "Death " + Math.round(distance) + "m";
+        Vec3d marker = death.add(0.0D, 0.95D, 0.0D);
+        ScreenPoint projected = projectDeathMarker(marker, camera, cameraPos, focalLength, width, height);
+        ScreenPoint pinned = projected == null
+                ? fallbackDeathDirection(death, camera, cameraPos, width, height)
+                : clampToScreenEdge(projected, width, height, 24);
+        int x = (int) Math.round(pinned.x());
+        int y = (int) Math.round(pinned.y());
+
+        drawDeathCross(context, x, y);
+        drawCenteredHudLabel(context, client, x, y + 10, label, DEATH_MARKER_COLOR);
+    }
+
+    private static void updateXrayCache(MinecraftClient client) {
+        if (client.world == null || client.player == null) {
+            cachedOrePositions.clear();
+            return;
+        }
+
+        BlockPos center = client.player.getBlockPos();
+        long now = client.world.getTime();
+        if (lastXrayScanCenter != null
+                && now < nextXrayScanTick
+                && squaredDistance(center, lastXrayScanCenter) < 100) {
+            return;
+        }
+
+        cachedOrePositions.clear();
+        for (BlockPos pos : BlockPos.iterateOutwards(center, XRAY_SCAN_RADIUS, XRAY_SCAN_VERTICAL_RADIUS, XRAY_SCAN_RADIUS)) {
+            ChestStyle style = oreStyle(client.world.getBlockState(pos));
+            if (style != null) {
+                cachedOrePositions.add(new OreTarget(pos.toImmutable(), style));
+            }
+        }
+        lastXrayScanCenter = center.toImmutable();
+        nextXrayScanTick = now + XRAY_SCAN_INTERVAL_TICKS;
+    }
+
+    private static ChestStyle oreStyle(BlockState state) {
+        if (state.isOf(Blocks.DIAMOND_ORE) || state.isOf(Blocks.DEEPSLATE_DIAMOND_ORE)) {
+            return DIAMOND_ORE;
+        }
+        if (state.isOf(Blocks.GOLD_ORE) || state.isOf(Blocks.DEEPSLATE_GOLD_ORE) || state.isOf(Blocks.NETHER_GOLD_ORE)) {
+            return GOLD_ORE;
+        }
+        if (state.isOf(Blocks.IRON_ORE) || state.isOf(Blocks.DEEPSLATE_IRON_ORE)) {
+            return IRON_ORE;
+        }
+        if (state.isOf(Blocks.LAPIS_ORE) || state.isOf(Blocks.DEEPSLATE_LAPIS_ORE)) {
+            return LAPIS_ORE;
+        }
+        return null;
+    }
+
     private static void updateBarrelCache(MinecraftClient client) {
         if (client.world == null || client.player == null) {
             cachedBarrelPositions.clear();
@@ -221,6 +353,273 @@ public final class WeikhackChestEspRenderer {
     private static boolean isBarrel(MinecraftClient client, BlockPos pos) {
         BlockState state = client.world.getBlockState(pos);
         return state.isOf(Blocks.BARREL);
+    }
+
+    private static void renderPlayerHealthBars(MinecraftClient client, MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers, VertexConsumer lines, Vec3d cameraPos) {
+        if (!WeikhackMod.isHealthBarsEnabled() || client.world == null || client.player == null || client.textRenderer == null) {
+            return;
+        }
+
+        Camera camera = client.gameRenderer.getCamera();
+        for (var player : client.world.getPlayers()) {
+            if (player == client.player || player.isSpectator() || !player.isAlive()) {
+                continue;
+            }
+
+            Vec3d labelPos = new Vec3d(player.getX(), player.getY() + player.getHeight() + 0.65D, player.getZ());
+            if (labelPos.squaredDistanceTo(cameraPos) > MAX_HUD_DISTANCE * MAX_HUD_DISTANCE) {
+                continue;
+            }
+
+            float healthPercent = Math.max(0.0F, Math.min(1.0F, player.getHealth() / Math.max(1.0F, player.getMaxHealth())));
+            int barColor = healthPercent > 0.55F ? 0xFF34F85A : healthPercent > 0.25F ? 0xFFFFC857 : 0xFFFF5555;
+            float barWidth = 42.0F;
+            float fillWidth = barWidth * healthPercent;
+
+            matrices.push();
+            matrices.translate(labelPos.x - cameraPos.x, labelPos.y - cameraPos.y, labelPos.z - cameraPos.z);
+            matrices.multiply(camera.getRotation());
+            matrices.scale(-0.025F, -0.025F, 0.025F);
+            MatrixStack.Entry entry = matrices.peek();
+
+            line(entry, lines, -barWidth / 2.0F, -2.0F, 0.0F, barWidth / 2.0F, -2.0F, 0.0F, 0xFF17212B);
+            line(entry, lines, -barWidth / 2.0F, -2.0F, -0.01F, -barWidth / 2.0F + fillWidth, -2.0F, -0.01F, barColor);
+            matrices.pop();
+        }
+
+        vertexConsumers.draw(CHEST_XRAY_LINES);
+
+        for (var player : client.world.getPlayers()) {
+            if (player == client.player || player.isSpectator() || !player.isAlive()) {
+                continue;
+            }
+
+            Vec3d labelPos = new Vec3d(player.getX(), player.getY() + player.getHeight() + 0.65D, player.getZ());
+            if (labelPos.squaredDistanceTo(cameraPos) > MAX_HUD_DISTANCE * MAX_HUD_DISTANCE) {
+                continue;
+            }
+
+            String label = String.format("%.0f/%.0f", player.getHealth(), player.getMaxHealth());
+            int textWidth = client.textRenderer.getWidth(label);
+
+            matrices.push();
+            matrices.translate(labelPos.x - cameraPos.x, labelPos.y - cameraPos.y, labelPos.z - cameraPos.z);
+            matrices.multiply(camera.getRotation());
+            matrices.scale(-0.025F, -0.025F, 0.025F);
+            MatrixStack.Entry entry = matrices.peek();
+            client.textRenderer.draw(label, -textWidth / 2.0F, -16.0F, 0xFFE6F7F4, false, entry.getPositionMatrix(), vertexConsumers, TextRenderer.TextLayerType.SEE_THROUGH, 0x99000000, 0xF000F0);
+            matrices.pop();
+        }
+    }
+
+    private static void renderPlayerHud(DrawContext context, MinecraftClient client, Camera camera, Vec3d cameraPos, double focalLength, int width, int height) {
+        if (!WeikhackMod.isHealthBarsEnabled()) {
+            return;
+        }
+
+        for (var player : client.world.getPlayers()) {
+            if (player == client.player || player.isSpectator() || !player.isAlive()) {
+                continue;
+            }
+
+            Vec3d labelPos = new Vec3d(player.getX(), player.getY() + player.getHeight() + 0.45D, player.getZ());
+            if (labelPos.squaredDistanceTo(cameraPos) > MAX_HUD_DISTANCE * MAX_HUD_DISTANCE) {
+                continue;
+            }
+
+            ScreenPoint point = projectPoint(labelPos.x, labelPos.y, labelPos.z, camera, focalLength, width, height);
+            if (point == null || point.x() < -80 || point.x() > width + 80 || point.y() < -40 || point.y() > height + 40) {
+                continue;
+            }
+
+            int centerX = (int) Math.round(point.x());
+            int top = (int) Math.round(point.y());
+            String health = String.format("%.0f/%.0f", player.getHealth(), player.getMaxHealth());
+            String label = health;
+            int textWidth = client.textRenderer.getWidth(label);
+            int left = centerX - textWidth / 2 - 4;
+            int right = centerX + textWidth / 2 + 4;
+            context.fill(left, top - 2, right, top + 19, 0xAA05090D);
+            context.drawTextWithShadow(client.textRenderer, Text.literal(label), centerX - textWidth / 2, top, 0xFFE6F7F4);
+
+            if (WeikhackMod.isHealthBarsEnabled()) {
+                float healthPercent = Math.max(0.0F, Math.min(1.0F, player.getHealth() / Math.max(1.0F, player.getMaxHealth())));
+                int barLeft = left + 3;
+                int barRight = right - 3;
+                int fillRight = barLeft + Math.round((barRight - barLeft) * healthPercent);
+                int barColor = healthPercent > 0.55F ? 0xFF34F85A : healthPercent > 0.25F ? 0xFFFFC857 : 0xFFFF5555;
+                context.fill(barLeft, top + 12, barRight, top + 15, 0xFF1C2732);
+                context.fill(barLeft, top + 12, fillRight, top + 15, barColor);
+            }
+        }
+    }
+
+    private static Vec3d anchoredDeathPosition() {
+        Vec3d death = WeikhackMod.getLastDeathPosition();
+        if (death == null) {
+            return null;
+        }
+
+        return new Vec3d(death.x, death.y, death.z);
+    }
+
+    private static void drawWorldDeathLabel(MinecraftClient client, MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers, Vec3d cameraPos, Vec3d death, String label) {
+        if (client.textRenderer == null) {
+            return;
+        }
+
+        Camera camera = client.gameRenderer.getCamera();
+        int textWidth = client.textRenderer.getWidth(label);
+        Vec3d labelPos = death.add(0.0D, 2.12D, 0.0D);
+
+        matrices.push();
+        matrices.translate(labelPos.x - cameraPos.x, labelPos.y - cameraPos.y, labelPos.z - cameraPos.z);
+        matrices.multiply(camera.getRotation());
+        matrices.scale(-0.035F, -0.035F, 0.035F);
+        MatrixStack.Entry entry = matrices.peek();
+
+        client.textRenderer.draw(label, -textWidth / 2.0F, 0.0F, DEATH_MARKER_COLOR, false, entry.getPositionMatrix(), vertexConsumers, TextRenderer.TextLayerType.SEE_THROUGH, 0xAA05090D, 0xF000F0);
+        client.textRenderer.draw("+", -client.textRenderer.getWidth("+") / 2.0F, -14.0F, DEATH_MARKER_COLOR, false, entry.getPositionMatrix(), vertexConsumers, TextRenderer.TextLayerType.SEE_THROUGH, 0x00000000, 0xF000F0);
+        matrices.pop();
+    }
+
+    private static void drawDeathTracer(MatrixStack matrices, VertexConsumer lines, Vec3d death, Vec3d cameraPos) {
+        MatrixStack.Entry entry = matrices.peek();
+        float targetX = (float) (death.x - cameraPos.x);
+        float targetY = (float) (death.y + 0.95D - cameraPos.y);
+        float targetZ = (float) (death.z - cameraPos.z);
+        line(entry, lines, 0.0F, 0.0F, 0.0F, targetX, targetY, targetZ, DEATH_MARKER_COLOR);
+    }
+
+    private static void drawDeathMarkerBox(MatrixStack.Entry entry, VertexConsumer lines, double x, double y, double z) {
+        float minX = (float) (x - 0.38D);
+        float minY = (float) y;
+        float minZ = (float) (z - 0.38D);
+        float maxX = (float) (x + 0.38D);
+        float maxY = (float) (y + 1.9D);
+        float maxZ = (float) (z + 0.38D);
+
+        line(entry, lines, minX, minY, minZ, maxX, minY, minZ, DEATH_MARKER_COLOR);
+        line(entry, lines, maxX, minY, minZ, maxX, minY, maxZ, DEATH_MARKER_COLOR);
+        line(entry, lines, maxX, minY, maxZ, minX, minY, maxZ, DEATH_MARKER_COLOR);
+        line(entry, lines, minX, minY, maxZ, minX, minY, minZ, DEATH_MARKER_COLOR);
+
+        line(entry, lines, minX, maxY, minZ, maxX, maxY, minZ, DEATH_MARKER_COLOR);
+        line(entry, lines, maxX, maxY, minZ, maxX, maxY, maxZ, DEATH_MARKER_COLOR);
+        line(entry, lines, maxX, maxY, maxZ, minX, maxY, maxZ, DEATH_MARKER_COLOR);
+        line(entry, lines, minX, maxY, maxZ, minX, maxY, minZ, DEATH_MARKER_COLOR);
+
+        line(entry, lines, minX, minY, minZ, minX, maxY, minZ, DEATH_MARKER_COLOR);
+        line(entry, lines, maxX, minY, minZ, maxX, maxY, minZ, DEATH_MARKER_COLOR);
+        line(entry, lines, maxX, minY, maxZ, maxX, maxY, maxZ, DEATH_MARKER_COLOR);
+        line(entry, lines, minX, minY, maxZ, minX, maxY, maxZ, DEATH_MARKER_COLOR);
+    }
+
+    private static boolean isRoughlyInFront(Camera camera, Vec3d cameraPos, Vec3d death) {
+        double targetYaw = Math.toDegrees(Math.atan2(-(death.x - cameraPos.x), death.z - cameraPos.z));
+        double relativeYaw = Math.abs(wrapDegrees(targetYaw - camera.getYaw()));
+        return relativeYaw < 58.0D;
+    }
+
+    private static ScreenPoint projectDeathMarker(Vec3d marker, Camera camera, Vec3d cameraPos, double focalLength, int width, int height) {
+        double dx = marker.x - cameraPos.x;
+        double dy = marker.y - cameraPos.y;
+        double dz = marker.z - cameraPos.z;
+        double horizontal = Math.sqrt(dx * dx + dz * dz);
+        if (horizontal < 0.001D) {
+            return new ScreenPoint(width * 0.5D, height * 0.5D);
+        }
+
+        double targetYaw = Math.toDegrees(Math.atan2(-dx, dz));
+        double targetPitch = -Math.toDegrees(Math.atan2(dy, horizontal));
+        double relativeYaw = wrapDegrees(targetYaw - camera.getYaw());
+        double relativePitch = wrapDegrees(targetPitch - camera.getPitch());
+
+        double verticalFov = 2.0D * Math.atan(height / (2.0D * focalLength));
+        double horizontalFov = 2.0D * Math.atan(Math.tan(verticalFov * 0.5D) * width / (double) height);
+        double horizontalLimit = Math.toDegrees(horizontalFov) * 0.5D + 4.0D;
+        double verticalLimit = Math.toDegrees(verticalFov) * 0.5D + 8.0D;
+        if (Math.abs(relativeYaw) > horizontalLimit || Math.abs(relativePitch) > verticalLimit) {
+            return null;
+        }
+
+        double yawRadians = Math.toRadians(relativeYaw);
+        double pitchRadians = Math.toRadians(relativePitch);
+        double x = projectedDeathMarkerX(marker, camera, cameraPos, focalLength, width, yawRadians);
+        double y = height * 0.5D + Math.tan(pitchRadians) / Math.tan(verticalFov * 0.5D) * height * 0.5D;
+        return new ScreenPoint(x, y);
+    }
+
+    private static double projectedDeathMarkerX(Vec3d marker, Camera camera, Vec3d cameraPos, double focalLength, int width, double yawRadians) {
+        double dx = marker.x - cameraPos.x;
+        double dy = marker.y - cameraPos.y;
+        double dz = marker.z - cameraPos.z;
+        Vector3fc right = camera.getDiagonalPlane();
+        Vector3fc forward = camera.getHorizontalPlane();
+        double cameraX = dx * right.x() + dy * right.y() + dz * right.z();
+        double cameraZ = dx * forward.x() + dy * forward.y() + dz * forward.z();
+        if (cameraZ > 0.05D) {
+            return width * 0.5D - cameraX * focalLength / cameraZ;
+        }
+        return width * 0.5D - Math.tan(yawRadians) * focalLength;
+    }
+
+    private static ScreenPoint clampToScreenEdge(ScreenPoint point, int width, int height, int margin) {
+        double centerX = width * 0.5D;
+        double centerY = height * 0.5D;
+        double dx = point.x() - centerX;
+        double dy = point.y() - centerY;
+        double minX = margin;
+        double minY = margin;
+        double maxX = width - margin;
+        double maxY = height - margin;
+
+        if (point.x() >= minX && point.x() <= maxX && point.y() >= minY && point.y() <= maxY) {
+            return point;
+        }
+
+        double scaleX = dx == 0.0D ? Double.POSITIVE_INFINITY : (dx > 0.0D ? (maxX - centerX) / dx : (minX - centerX) / dx);
+        double scaleY = dy == 0.0D ? Double.POSITIVE_INFINITY : (dy > 0.0D ? (maxY - centerY) / dy : (minY - centerY) / dy);
+        double scale = Math.max(0.0D, Math.min(scaleX, scaleY));
+        return new ScreenPoint(centerX + dx * scale, centerY + dy * scale);
+    }
+
+    private static ScreenPoint fallbackDeathDirection(Vec3d death, Camera camera, Vec3d cameraPos, int width, int height) {
+        double targetYaw = Math.toDegrees(Math.atan2(-(death.x - cameraPos.x), death.z - cameraPos.z));
+        double relativeYaw = wrapDegrees(targetYaw - camera.getYaw());
+        double angle = Math.toRadians(relativeYaw);
+        double centerX = width * 0.5D;
+        double centerY = height * 0.5D;
+        return clampToScreenEdge(
+                new ScreenPoint(centerX - Math.sin(angle) * width, centerY - Math.cos(angle) * height),
+                width,
+                height,
+                24
+        );
+    }
+
+    private static void drawDeathCross(DrawContext context, int x, int y) {
+        context.fill(x - 5, y - 1, x + 6, y + 2, DEATH_MARKER_COLOR);
+        context.fill(x - 1, y - 5, x + 2, y + 6, DEATH_MARKER_COLOR);
+        context.fill(x - 3, y - 3, x + 4, y + 4, 0x55000000);
+    }
+
+    private static void drawCenteredHudLabel(DrawContext context, MinecraftClient client, int centerX, int y, String label, int color) {
+        int textWidth = client.textRenderer.getWidth(label);
+        int left = centerX - textWidth / 2 - 4;
+        context.fill(left, y - 2, left + textWidth + 8, y + 11, 0xAA05090D);
+        context.drawTextWithShadow(client.textRenderer, Text.literal(label), centerX - textWidth / 2, y, color);
+    }
+
+    private static double wrapDegrees(double degrees) {
+        double wrapped = degrees % 360.0D;
+        if (wrapped >= 180.0D) {
+            wrapped -= 360.0D;
+        }
+        if (wrapped < -180.0D) {
+            wrapped += 360.0D;
+        }
+        return wrapped;
     }
 
     private static int squaredDistance(BlockPos first, BlockPos second) {
@@ -370,6 +769,9 @@ public final class WeikhackChestEspRenderer {
     }
 
     private record ChestStyle(int color, String label) {
+    }
+
+    private record OreTarget(BlockPos pos, ChestStyle style) {
     }
 
     private record ScreenPoint(double x, double y) {

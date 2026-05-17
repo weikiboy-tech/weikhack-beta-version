@@ -1,8 +1,15 @@
 .gradle/
 build/
 out/
+run/
 *.log
-.gradle-local/
+*.tmp
 *.class
-*.jar
-!gradle/wrapper/gradle-wrapper.jar
+
+# Local Gradle bundle used by this Codex workspace.
+.gradle-local/
+
+# IDE files
+.idea/
+*.iml
+.vscode/

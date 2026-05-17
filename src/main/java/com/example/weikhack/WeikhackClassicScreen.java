@@ -60,7 +60,7 @@ public class WeikhackClassicScreen extends Screen {
         super.render(context, mouseX, mouseY, delta);
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, panelTop + 12, 0xFF68D391);
         context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(WeikhackMod.DISPLAY_VERSION), this.width / 2, panelTop + 24, 0xFFB7F7DA);
-        context.drawCenteredTextWithShadow(this.textRenderer, Text.literal("Right Shift oeffnet dieses Menu"), this.width / 2, panelBottom - 18, 0xFFB7C4C9);
+        context.drawCenteredTextWithShadow(this.textRenderer, Text.literal("Right Shift öffnet dieses Menü"), this.width / 2, panelBottom - 18, 0xFFB7C4C9);
     }
 
     @Override
