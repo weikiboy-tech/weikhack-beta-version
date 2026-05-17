@@ -54,6 +54,11 @@ public final class WeikhackChestEspRenderer {
     private static final ChestStyle GOLD_ORE = new ChestStyle(0xFFFFD166, "Gold");
     private static final ChestStyle IRON_ORE = new ChestStyle(0xFFD8DEE9, "Iron");
     private static final ChestStyle LAPIS_ORE = new ChestStyle(0xFF60A5FA, "Lapis");
+    private static final ChestStyle EMERALD_ORE = new ChestStyle(0xFF34D399, "Emerald");
+    private static final ChestStyle REDSTONE_ORE = new ChestStyle(0xFFFF3B3B, "Redstone");
+    private static final ChestStyle COAL_ORE = new ChestStyle(0xFF7A8794, "Coal");
+    private static final ChestStyle COPPER_ORE = new ChestStyle(0xFFFF9F6E, "Copper");
+    private static final ChestStyle ANCIENT_DEBRIS = new ChestStyle(0xFF8B5A4E, "Ancient Debris");
     private static final int DEATH_MARKER_COLOR = 0xFFFF4D6D;
     private static final RenderLayer CHEST_XRAY_LINES = createXrayLineLayer();
     private static final VoxelShape CHEST_BOX = VoxelShapes.cuboid(new Box(
@@ -311,17 +316,41 @@ public final class WeikhackChestEspRenderer {
     }
 
     private static ChestStyle oreStyle(BlockState state) {
-        if (state.isOf(Blocks.DIAMOND_ORE) || state.isOf(Blocks.DEEPSLATE_DIAMOND_ORE)) {
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.DIAMOND)
+                && (state.isOf(Blocks.DIAMOND_ORE) || state.isOf(Blocks.DEEPSLATE_DIAMOND_ORE))) {
             return DIAMOND_ORE;
         }
-        if (state.isOf(Blocks.GOLD_ORE) || state.isOf(Blocks.DEEPSLATE_GOLD_ORE) || state.isOf(Blocks.NETHER_GOLD_ORE)) {
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.GOLD)
+                && (state.isOf(Blocks.GOLD_ORE) || state.isOf(Blocks.DEEPSLATE_GOLD_ORE) || state.isOf(Blocks.NETHER_GOLD_ORE))) {
             return GOLD_ORE;
         }
-        if (state.isOf(Blocks.IRON_ORE) || state.isOf(Blocks.DEEPSLATE_IRON_ORE)) {
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.IRON)
+                && (state.isOf(Blocks.IRON_ORE) || state.isOf(Blocks.DEEPSLATE_IRON_ORE))) {
             return IRON_ORE;
         }
-        if (state.isOf(Blocks.LAPIS_ORE) || state.isOf(Blocks.DEEPSLATE_LAPIS_ORE)) {
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.LAPIS)
+                && (state.isOf(Blocks.LAPIS_ORE) || state.isOf(Blocks.DEEPSLATE_LAPIS_ORE))) {
             return LAPIS_ORE;
+        }
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.EMERALD)
+                && (state.isOf(Blocks.EMERALD_ORE) || state.isOf(Blocks.DEEPSLATE_EMERALD_ORE))) {
+            return EMERALD_ORE;
+        }
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.REDSTONE)
+                && (state.isOf(Blocks.REDSTONE_ORE) || state.isOf(Blocks.DEEPSLATE_REDSTONE_ORE))) {
+            return REDSTONE_ORE;
+        }
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.COAL)
+                && (state.isOf(Blocks.COAL_ORE) || state.isOf(Blocks.DEEPSLATE_COAL_ORE))) {
+            return COAL_ORE;
+        }
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.COPPER)
+                && (state.isOf(Blocks.COPPER_ORE) || state.isOf(Blocks.DEEPSLATE_COPPER_ORE))) {
+            return COPPER_ORE;
+        }
+        if (WeikhackMod.isXrayOreEnabled(WeikhackMod.XrayOre.ANCIENT_DEBRIS)
+                && state.isOf(Blocks.ANCIENT_DEBRIS)) {
+            return ANCIENT_DEBRIS;
         }
         return null;
     }

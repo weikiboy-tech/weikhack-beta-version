@@ -52,6 +52,7 @@ public class WeikhackScreen extends Screen {
                 .module("Freecam", "Camera", Module.FREECAM, false)
                 .module("AutoArmor", "Equip", Module.AUTO_ARMOR, false)
                 .module("AutoTotem", "Offhand", Module.AUTO_TOTEM, false)
+                .module("AutoTool", "Best item", Module.AUTO_TOOL, false)
                 .module("FastPlace", "Blocks", Module.FAST_PLACE, false));
         panels.add(new Panel("Movement", x[1], startY)
                 .module("Flight", "Survival", Module.FLIGHT, false)
@@ -60,14 +61,18 @@ public class WeikhackScreen extends Screen {
                 .module("SafeWalk", "Edges", Module.SAFE_WALK, false)
                 .module("NoVelo", "Air control", Module.NO_VELO, false)
                 .module("AutoSprint", "Run", Module.AUTO_SPRINT, true)
+                .module("BoatFly", "Boat flight", Module.BOAT_FLY, true)
+                .module("ElytraBoost", "No rockets", Module.ELYTRA_BOOST, false)
+                .module("AirJump", "Multi jump", Module.AIR_JUMP, false)
                 .module("JumpHeight", "Blocks", Module.JUMP_HEIGHT, true)
                 .module("NoSlow", "Use move", Module.NO_SLOWDOWN, false));
         panels.add(new Panel("Render", x[2], startY)
                 .module("Player ESP", "Outline", Module.PLAYER_ESP, false)
                 .module("Chest ESP", "Storage", Module.CHEST_ESP, true)
-                .module("XRay", "Ores", Module.XRAY, false)
+                .module("XRay", "Ores", Module.XRAY, true)
                 .module("HealthBars", "HP", Module.HEALTHBARS, false)
                 .module("FullBright", "Gamma", Module.FULL_BRIGHT, false)
+                .module("NoWeather", "Silent clear", Module.NO_WEATHER, false)
                 .module("Death Marker", "Waypoint", Module.DEATH_MARKER, false));
         panels.add(new Panel("Combat", x[3], startY)
                 .module("KillAura", "Auto combat", Module.KILL_AURA, true)
@@ -229,8 +234,15 @@ public class WeikhackScreen extends Screen {
                 drawOptionToggle(context, x, y, "Barrels", WeikhackMod.isChestEspBarrelsEnabled(), 3);
                 drawOptionToggle(context, x, y, "Shulkers", WeikhackMod.isChestEspShulkersEnabled(), 4);
             }
+            case XRAY -> {
+                WeikhackMod.XrayOre[] ores = WeikhackMod.XrayOre.values();
+                for (int i = 0; i < ores.length; i++) {
+                    drawOptionToggle(context, x, y, ores[i].label(), WeikhackMod.isXrayOreEnabled(ores[i]), i);
+                }
+            }
             case AUTO_SPRINT -> drawOptionToggle(context, x, y, "WASD", WeikhackMod.isAutoSprintAllDirections(), 0);
             case SPEED -> drawSlider(context, x + 8, y + 10, x + PANEL_WIDTH - 8, WeikhackMod.getSpeedSliderValue(), WeikhackMod.hasSpeedBoost(), String.format(Locale.ROOT, "%.1fx", WeikhackMod.getSpeedMultiplier()));
+            case BOAT_FLY -> drawSlider(context, x + 8, y + 10, x + PANEL_WIDTH - 8, WeikhackMod.getBoatFlySliderValue(), WeikhackMod.isBoatFlyEnabled(), String.format(Locale.ROOT, "%.1fx", WeikhackMod.getBoatFlySpeedMultiplier()));
             case JUMP_HEIGHT -> drawSlider(context, x + 8, y + 10, x + PANEL_WIDTH - 8, WeikhackMod.getJumpSliderValue(), WeikhackMod.isJumpHeightEnabled(), String.format(Locale.ROOT, "%.1fb", WeikhackMod.getJumpHeightBlocks()));
             case CONFIG -> {
                 drawAction(context, x + 6, y + 5, 46, "SAVE", false);
@@ -351,9 +363,14 @@ public class WeikhackScreen extends Screen {
                 }
             }
             case CHEST_ESP -> toggleChestType(index);
+            case XRAY -> toggleXrayOre(index);
             case AUTO_SPRINT -> WeikhackMod.setAutoSprintAllDirections(!WeikhackMod.isAutoSprintAllDirections(), client, true);
             case SPEED -> {
                 draggingSlider = "speed";
+                updateSlider(draggingSlider, mouseX);
+            }
+            case BOAT_FLY -> {
+                draggingSlider = "boat";
                 updateSlider(draggingSlider, mouseX);
             }
             case JUMP_HEIGHT -> {
@@ -384,6 +401,16 @@ public class WeikhackScreen extends Screen {
         }
     }
 
+    private static void toggleXrayOre(int index) {
+        WeikhackMod.XrayOre[] ores = WeikhackMod.XrayOre.values();
+        if (index < 0 || index >= ores.length) {
+            return;
+        }
+
+        WeikhackMod.XrayOre ore = ores[index];
+        WeikhackMod.setXrayOreEnabled(ore, !WeikhackMod.isXrayOreEnabled(ore), MinecraftClient.getInstance(), true);
+    }
+
     private void updateSlider(String slider, double mouseX) {
         int sliderLeft = 0;
         int sliderRight = 0;
@@ -391,7 +418,7 @@ public class WeikhackScreen extends Screen {
             int rowY = panel.y + HEADER_HEIGHT;
             for (ModuleEntry entry : panel.modules) {
                 rowY += MODULE_HEIGHT;
-                if (entry.open && ((slider.equals("speed") && entry.module == Module.SPEED) || (slider.equals("jump") && entry.module == Module.JUMP_HEIGHT))) {
+                if (entry.open && ((slider.equals("speed") && entry.module == Module.SPEED) || (slider.equals("boat") && entry.module == Module.BOAT_FLY) || (slider.equals("jump") && entry.module == Module.JUMP_HEIGHT))) {
                     sliderLeft = panel.x + 8;
                     sliderRight = panel.x + PANEL_WIDTH - 8;
                 }
@@ -406,6 +433,8 @@ public class WeikhackScreen extends Screen {
         double value = clamp((mouseX - sliderLeft) / (double) (sliderRight - sliderLeft), 0.0D, 1.0D);
         if (slider.equals("speed")) {
             WeikhackMod.setSpeedSliderValue(value);
+        } else if (slider.equals("boat")) {
+            WeikhackMod.setBoatFlySliderValue(value);
         } else {
             WeikhackMod.setJumpSliderValue(value);
         }
@@ -415,8 +444,9 @@ public class WeikhackScreen extends Screen {
         return switch (module) {
             case KILL_AURA -> OPTION_HEIGHT * 2;
             case CHEST_ESP -> OPTION_HEIGHT * 5;
+            case XRAY -> OPTION_HEIGHT * WeikhackMod.XrayOre.values().length;
             case AUTO_SPRINT -> OPTION_HEIGHT;
-            case SPEED, JUMP_HEIGHT, CONFIG -> 28;
+            case SPEED, BOAT_FLY, JUMP_HEIGHT, CONFIG -> 28;
             default -> OPTION_HEIGHT;
         };
     }
@@ -429,12 +459,16 @@ public class WeikhackScreen extends Screen {
             case SAFE_WALK -> WeikhackMod.isSafeWalkEnabled();
             case NO_VELO -> WeikhackMod.isNoVeloEnabled();
             case AUTO_SPRINT -> WeikhackMod.isAutoSprintEnabled();
+            case BOAT_FLY -> WeikhackMod.isBoatFlyEnabled();
+            case ELYTRA_BOOST -> WeikhackMod.isElytraBoostEnabled();
+            case AIR_JUMP -> WeikhackMod.isAirJumpEnabled();
             case JUMP_HEIGHT -> WeikhackMod.isJumpHeightEnabled();
             case KILL_AURA -> WeikhackMod.isKillAuraEnabled();
             case NO_KNOCKBACK -> WeikhackMod.isNoKnockbackEnabled();
             case PLAYER_ESP -> WeikhackMod.isEspEnabled();
             case CHEST_ESP -> WeikhackMod.isChestEspEnabled();
             case FULL_BRIGHT -> WeikhackMod.isFullBrightEnabled();
+            case NO_WEATHER -> WeikhackMod.isNoWeatherEnabled();
             case XRAY -> WeikhackMod.isXrayEnabled();
             case HEALTHBARS -> WeikhackMod.isHealthBarsEnabled();
             case DEATH_MARKER -> WeikhackMod.isDeathMarkerEnabled();
@@ -442,6 +476,7 @@ public class WeikhackScreen extends Screen {
             case FREECAM -> WeikhackMod.isFreecamEnabled();
             case AUTO_ARMOR -> WeikhackMod.isAutoArmorEnabled();
             case AUTO_TOTEM -> WeikhackMod.isAutoTotemEnabled();
+            case AUTO_TOOL -> WeikhackMod.isAutoToolEnabled();
             case NO_SLOWDOWN -> WeikhackMod.isNoSlowdownEnabled();
             case FAST_PLACE -> WeikhackMod.isFastPlaceEnabled();
             case ACTIVE_LIST -> WeikhackMod.isActiveListEnabled();
@@ -459,12 +494,16 @@ public class WeikhackScreen extends Screen {
             case SAFE_WALK -> WeikhackMod.setSafeWalkEnabled(!WeikhackMod.isSafeWalkEnabled(), client, true);
             case NO_VELO -> WeikhackMod.setNoVeloEnabled(!WeikhackMod.isNoVeloEnabled(), client, true);
             case AUTO_SPRINT -> WeikhackMod.setAutoSprintEnabled(!WeikhackMod.isAutoSprintEnabled(), client, true);
+            case BOAT_FLY -> WeikhackMod.setBoatFlyEnabled(!WeikhackMod.isBoatFlyEnabled(), client, true);
+            case ELYTRA_BOOST -> WeikhackMod.setElytraBoostEnabled(!WeikhackMod.isElytraBoostEnabled(), client, true);
+            case AIR_JUMP -> WeikhackMod.setAirJumpEnabled(!WeikhackMod.isAirJumpEnabled(), client, true);
             case JUMP_HEIGHT -> WeikhackMod.setJumpHeightEnabled(!WeikhackMod.isJumpHeightEnabled(), client, true);
             case KILL_AURA -> WeikhackMod.setKillAuraEnabled(!WeikhackMod.isKillAuraEnabled(), client, true);
             case NO_KNOCKBACK -> WeikhackMod.setNoKnockbackEnabled(!WeikhackMod.isNoKnockbackEnabled(), client, true);
             case PLAYER_ESP -> WeikhackMod.setEspEnabled(!WeikhackMod.isEspEnabled(), client, true);
             case CHEST_ESP -> WeikhackMod.setChestEspEnabled(!WeikhackMod.isChestEspEnabled(), client, true);
             case FULL_BRIGHT -> WeikhackMod.setFullBrightEnabled(!WeikhackMod.isFullBrightEnabled(), client, true);
+            case NO_WEATHER -> WeikhackMod.setNoWeatherEnabled(!WeikhackMod.isNoWeatherEnabled(), client, true);
             case XRAY -> WeikhackMod.setXrayEnabled(!WeikhackMod.isXrayEnabled(), client, true);
             case HEALTHBARS -> WeikhackMod.setHealthBarsEnabled(!WeikhackMod.isHealthBarsEnabled(), client, true);
             case DEATH_MARKER -> WeikhackMod.setDeathMarkerEnabled(!WeikhackMod.isDeathMarkerEnabled(), client, true);
@@ -472,6 +511,7 @@ public class WeikhackScreen extends Screen {
             case FREECAM -> WeikhackMod.setFreecamEnabled(!WeikhackMod.isFreecamEnabled(), client, true);
             case AUTO_ARMOR -> WeikhackMod.setAutoArmorEnabled(!WeikhackMod.isAutoArmorEnabled(), client, true);
             case AUTO_TOTEM -> WeikhackMod.setAutoTotemEnabled(!WeikhackMod.isAutoTotemEnabled(), client, true);
+            case AUTO_TOOL -> WeikhackMod.setAutoToolEnabled(!WeikhackMod.isAutoToolEnabled(), client, true);
             case NO_SLOWDOWN -> WeikhackMod.setNoSlowdownEnabled(!WeikhackMod.isNoSlowdownEnabled(), client, true);
             case FAST_PLACE -> WeikhackMod.setFastPlaceEnabled(!WeikhackMod.isFastPlaceEnabled(), client, true);
             case ACTIVE_LIST -> WeikhackMod.setActiveListEnabled(!WeikhackMod.isActiveListEnabled(), client, true);
@@ -548,12 +588,16 @@ public class WeikhackScreen extends Screen {
         SAFE_WALK,
         NO_VELO,
         AUTO_SPRINT,
+        BOAT_FLY,
+        ELYTRA_BOOST,
+        AIR_JUMP,
         JUMP_HEIGHT,
         KILL_AURA,
         NO_KNOCKBACK,
         PLAYER_ESP,
         CHEST_ESP,
         FULL_BRIGHT,
+        NO_WEATHER,
         XRAY,
         HEALTHBARS,
         DEATH_MARKER,
@@ -561,6 +605,7 @@ public class WeikhackScreen extends Screen {
         FREECAM,
         AUTO_ARMOR,
         AUTO_TOTEM,
+        AUTO_TOOL,
         NO_SLOWDOWN,
         FAST_PLACE,
         ACTIVE_LIST,

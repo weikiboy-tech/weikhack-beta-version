@@ -2,17 +2,17 @@
 
 Weikhack Beta Version 0.15 ist ein externer Fabric Client-Mod für Minecraft 1.21.11. Der Mod wird einfach als normale `.jar` in den Minecraft `mods`-Ordner gelegt und kann dadurch zusammen mit anderen Fabric-Mods genutzt werden, zum Beispiel Cinematica oder weiteren Client-Erweiterungen.
 
-![Weikhack ClickGUI Showcase](docs/showcase-clickgui.svg)
+![Weikhack ClickGUI Showcase](docs/showcase-clickgui.png)
 
 ## Features
 
 - Modernes Drag-and-drop ClickGUI über `Right Shift`, inklusive eigenem Config-Panel
-- Movement-Module wie Flight, Speed, NoFall, SafeWalk, NoVelo, AutoSprint, JumpHeight und NoSlowdown
-- Render-Module wie Player ESP, Storage/Chest ESP, XRay, HealthBars und FullBright
-- Combat-Module wie NoKnockback und KillAura für Mobs und optional Spieler
-- Player-Module wie Chest Stealer, Freecam, AutoArmor, AutoTotem und FastPlace
+- Movement-Module wie Flight, Speed, NoFall, SafeWalk, NoVelo, AutoSprint, BoatFly, ElytraBoost, AirJump, JumpHeight und NoSlowdown
+- Render-Module wie Player ESP, Storage/Chest ESP, XRay, HealthBars, FullBright und NoWeather
+- Combat-Module wie NoKnockback und KillAura für feindliche Mobs und optional Spieler
+- Player-Module wie Chest Stealer, Freecam, AutoArmor, AutoTotem, AutoTool und FastPlace
 - Misc-Helfer wie Active List, Config-Panel und FakeLag
-- Chat-Befehle wie `.help`, `.bind`, `.unbind`, `.clearbinds`, `.saveconfig` und `.speed`
+- Chat-Befehle wie `.help`, `.bind`, `.unbind`, `.clearbinds`, `.saveconfig`, `.speed` und `.boatspeed`
 - Eigene Binds können jederzeit frei erstellt werden, zum Beispiel mit `.bind flight g`
 - Config-Presets für PVE, PVP, Rage, Mining und Travel, jeweils mit FullBright als Basis
 - Config-Speicherknopf inklusive Module, Optionen und Binds

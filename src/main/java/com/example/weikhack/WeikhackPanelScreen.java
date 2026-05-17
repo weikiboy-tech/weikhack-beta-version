@@ -32,6 +32,7 @@ public class WeikhackPanelScreen extends Screen {
     private static final int CHEST_OPTION_GAP = 3;
     private static final int CHEST_OPTION_TOP_GAP = 5;
     private static final int CHEST_TYPE_COUNT = 5;
+    private static final int XRAY_ORE_COUNT = WeikhackMod.XrayOre.values().length;
     private static final int DUAL_BUTTON_WIDTH = 54;
     private static final int DUAL_BUTTON_GAP = 8;
     private static final int NORMAL_CHEST_COLOR = 0xFF34F85A;
@@ -39,13 +40,26 @@ public class WeikhackPanelScreen extends Screen {
     private static final int ENDER_CHEST_COLOR = 0xFFB66CFF;
     private static final int BARREL_COLOR = 0xFFFFC857;
     private static final int SHULKER_COLOR = 0xFF55D7FF;
+    private static final int[] XRAY_ORE_COLORS = {
+            0xFF55D7FF,
+            0xFFD8DEE9,
+            0xFFFFD166,
+            0xFF60A5FA,
+            0xFF34D399,
+            0xFFFF3B3B,
+            0xFF7A8794,
+            0xFFFF9F6E,
+            0xFF8B5A4E
+    };
 
     private Category selectedCategory = Category.MOVEMENT;
     private double moduleScroll;
     private boolean draggingSpeedSlider;
+    private boolean draggingBoatFlySlider;
     private boolean draggingJumpSlider;
     private boolean killAuraTypesOpen;
     private boolean chestTypesOpen;
+    private boolean xrayTypesOpen;
 
     protected WeikhackPanelScreen() {
         super(Text.literal("Weikhack Alte UI"));
@@ -162,6 +176,10 @@ public class WeikhackPanelScreen extends Screen {
             updateSpeedFromMouse(click.x());
             return true;
         }
+        if (draggingBoatFlySlider) {
+            updateBoatFlyFromMouse(click.x());
+            return true;
+        }
         if (draggingJumpSlider) {
             updateJumpFromMouse(click.x());
             return true;
@@ -173,6 +191,10 @@ public class WeikhackPanelScreen extends Screen {
     public boolean mouseReleased(Click click) {
         if (draggingSpeedSlider) {
             draggingSpeedSlider = false;
+            return true;
+        }
+        if (draggingBoatFlySlider) {
+            draggingBoatFlySlider = false;
             return true;
         }
         if (draggingJumpSlider) {
@@ -255,6 +277,29 @@ public class WeikhackPanelScreen extends Screen {
         rowTop += ROW_HEIGHT + ROW_GAP;
         if (isHover(mouseX, mouseY, left, rowTop, right - left, SPEED_ROW_HEIGHT)) {
             if (isHover(mouseX, mouseY, left + 14, rowTop + 39, right - left - 28, 16)) {
+                draggingBoatFlySlider = true;
+                updateBoatFlyFromMouse(mouseX);
+            } else {
+                WeikhackMod.setBoatFlyEnabled(!WeikhackMod.isBoatFlyEnabled(), MinecraftClient.getInstance(), true);
+            }
+            return true;
+        }
+
+        rowTop += SPEED_ROW_HEIGHT + ROW_GAP;
+        if (isHover(mouseX, mouseY, left, rowTop, right - left, ROW_HEIGHT)) {
+            WeikhackMod.setElytraBoostEnabled(!WeikhackMod.isElytraBoostEnabled(), MinecraftClient.getInstance(), true);
+            return true;
+        }
+
+        rowTop += ROW_HEIGHT + ROW_GAP;
+        if (isHover(mouseX, mouseY, left, rowTop, right - left, ROW_HEIGHT)) {
+            WeikhackMod.setAirJumpEnabled(!WeikhackMod.isAirJumpEnabled(), MinecraftClient.getInstance(), true);
+            return true;
+        }
+
+        rowTop += ROW_HEIGHT + ROW_GAP;
+        if (isHover(mouseX, mouseY, left, rowTop, right - left, SPEED_ROW_HEIGHT)) {
+            if (isHover(mouseX, mouseY, left + 14, rowTop + 39, right - left - 28, 16)) {
                 draggingJumpSlider = true;
                 updateJumpFromMouse(mouseX);
             } else {
@@ -294,6 +339,12 @@ public class WeikhackPanelScreen extends Screen {
         rowTop += ROW_HEIGHT + ROW_GAP;
         if (isHover(mouseX, mouseY, left, rowTop, right - left, ROW_HEIGHT)) {
             WeikhackMod.setAutoTotemEnabled(!WeikhackMod.isAutoTotemEnabled(), MinecraftClient.getInstance(), true);
+            return true;
+        }
+
+        rowTop += ROW_HEIGHT + ROW_GAP;
+        if (isHover(mouseX, mouseY, left, rowTop, right - left, ROW_HEIGHT)) {
+            WeikhackMod.setAutoToolEnabled(!WeikhackMod.isAutoToolEnabled(), MinecraftClient.getInstance(), true);
             return true;
         }
 
@@ -425,11 +476,30 @@ public class WeikhackPanelScreen extends Screen {
         }
 
         if (isHover(mouseX, mouseY, left, rowTop, right - left, ROW_HEIGHT)) {
+            if (isHover(mouseX, mouseY, typeButtonLeft(right), rowTop + 10, TYPE_BUTTON_WIDTH, 20)) {
+                xrayTypesOpen = !xrayTypesOpen;
+                return true;
+            }
             WeikhackMod.setXrayEnabled(!WeikhackMod.isXrayEnabled(), MinecraftClient.getInstance(), true);
             return true;
         }
 
-        rowTop += ROW_HEIGHT + ROW_GAP;
+        rowTop += ROW_HEIGHT;
+        if (xrayTypesOpen) {
+            rowTop += CHEST_OPTION_TOP_GAP;
+            WeikhackMod.XrayOre[] ores = WeikhackMod.XrayOre.values();
+            for (int i = 0; i < ores.length; i++) {
+                if (isHover(mouseX, mouseY, left + 8, rowTop, right - left - 8, CHEST_OPTION_HEIGHT)) {
+                    WeikhackMod.XrayOre ore = ores[i];
+                    WeikhackMod.setXrayOreEnabled(ore, !WeikhackMod.isXrayOreEnabled(ore), MinecraftClient.getInstance(), true);
+                    return true;
+                }
+                rowTop += CHEST_OPTION_HEIGHT + (i == ores.length - 1 ? ROW_GAP : CHEST_OPTION_GAP);
+            }
+        } else {
+            rowTop += ROW_GAP;
+        }
+
         if (isHover(mouseX, mouseY, left, rowTop, right - left, ROW_HEIGHT)) {
             WeikhackMod.setHealthBarsEnabled(!WeikhackMod.isHealthBarsEnabled(), MinecraftClient.getInstance(), true);
             return true;
@@ -438,6 +508,12 @@ public class WeikhackPanelScreen extends Screen {
         rowTop += ROW_HEIGHT + ROW_GAP;
         if (isHover(mouseX, mouseY, left, rowTop, right - left, ROW_HEIGHT)) {
             WeikhackMod.setFullBrightEnabled(!WeikhackMod.isFullBrightEnabled(), MinecraftClient.getInstance(), true);
+            return true;
+        }
+
+        rowTop += ROW_HEIGHT + ROW_GAP;
+        if (isHover(mouseX, mouseY, left, rowTop, right - left, ROW_HEIGHT)) {
+            WeikhackMod.setNoWeatherEnabled(!WeikhackMod.isNoWeatherEnabled(), MinecraftClient.getInstance(), true);
             return true;
         }
 
@@ -514,6 +590,12 @@ public class WeikhackPanelScreen extends Screen {
         top += ROW_HEIGHT + ROW_GAP;
         drawAutoSprintRow(context, mouseX, mouseY, left, top, right);
         top += ROW_HEIGHT + ROW_GAP;
+        drawBoatFlyRow(context, mouseX, mouseY, left, top, right);
+        top += SPEED_ROW_HEIGHT + ROW_GAP;
+        drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "ElytraBoost", "No rockets", WeikhackMod.isElytraBoostEnabled(), "Boost");
+        top += ROW_HEIGHT + ROW_GAP;
+        drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "AirJump", "Multi jump", WeikhackMod.isAirJumpEnabled(), "Jump");
+        top += ROW_HEIGHT + ROW_GAP;
         drawJumpRow(context, mouseX, mouseY, left, top, right);
         top += SPEED_ROW_HEIGHT + ROW_GAP;
         drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "NoSlow", "Use move", WeikhackMod.isNoSlowdownEnabled(), "Toggle");
@@ -542,6 +624,8 @@ public class WeikhackPanelScreen extends Screen {
         drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "AutoArmor", "Equip best", WeikhackMod.isAutoArmorEnabled(), "Equip");
         top += ROW_HEIGHT + ROW_GAP;
         drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "AutoTotem", "Offhand", WeikhackMod.isAutoTotemEnabled(), "Totem");
+        top += ROW_HEIGHT + ROW_GAP;
+        drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "AutoTool", "Best item", WeikhackMod.isAutoToolEnabled(), "Tool");
         top += ROW_HEIGHT + ROW_GAP;
         drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "FastPlace", "Blocks", WeikhackMod.isFastPlaceEnabled(), "Place");
     }
@@ -574,11 +658,23 @@ public class WeikhackPanelScreen extends Screen {
         } else {
             top += ROW_GAP;
         }
-        drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "XRay", "Ore boxes", WeikhackMod.isXrayEnabled(), "Ore");
-        top += ROW_HEIGHT + ROW_GAP;
+        drawXrayRow(context, mouseX, mouseY, left, top, right);
+        top += ROW_HEIGHT;
+        if (xrayTypesOpen) {
+            top += CHEST_OPTION_TOP_GAP;
+            WeikhackMod.XrayOre[] ores = WeikhackMod.XrayOre.values();
+            for (int i = 0; i < ores.length; i++) {
+                drawXrayOption(context, mouseX, mouseY, left + 8, top, right, ores[i], XRAY_ORE_COLORS[i]);
+                top += CHEST_OPTION_HEIGHT + (i == ores.length - 1 ? ROW_GAP : CHEST_OPTION_GAP);
+            }
+        } else {
+            top += ROW_GAP;
+        }
         drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "HealthBars", "Player HP", WeikhackMod.isHealthBarsEnabled(), "HP");
         top += ROW_HEIGHT + ROW_GAP;
         drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "FullBright", "Gamma", WeikhackMod.isFullBrightEnabled(), "Toggle");
+        top += ROW_HEIGHT + ROW_GAP;
+        drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "NoWeather", "Silent clear", WeikhackMod.isNoWeatherEnabled(), "Clear");
         top += ROW_HEIGHT + ROW_GAP;
         drawModuleRow(context, mouseX, mouseY, left, top, right, ROW_HEIGHT, "Death Marker", "Last death", WeikhackMod.isDeathMarkerEnabled(), "Mark");
     }
@@ -594,6 +690,20 @@ public class WeikhackPanelScreen extends Screen {
         context.drawTextWithShadow(this.textRenderer, Text.literal("Chest ESP"), left + 12, top + 8, 0xFFF5F7FA);
         context.drawTextWithShadow(this.textRenderer, Text.literal(chestTypesOpen ? "Storage types" : "Storage boxes"), left + 12, top + 24, 0xFF8E9BA8);
         drawDropdownButton(context, typeButtonLeft(right), top + 10, TYPE_BUTTON_WIDTH, 20, "ART", artHovered || chestTypesOpen);
+        drawCheckbox(context, right - 24, top + 13, enabled);
+    }
+
+    private void drawXrayRow(DrawContext context, int mouseX, int mouseY, int left, int top, int right) {
+        boolean enabled = WeikhackMod.isXrayEnabled();
+        boolean hovered = isHover(mouseX, mouseY, left, top, right - left, ROW_HEIGHT);
+        boolean oreHovered = isHover(mouseX, mouseY, typeButtonLeft(right), top + 10, TYPE_BUTTON_WIDTH, 20);
+        int border = enabled ? 0xFF6EE7B7 : 0xFF27323D;
+        int fill = enabled ? 0xFF102720 : hovered ? 0xFF151F2A : 0xFF0F151D;
+        fillBox(context, left, top, right, top + ROW_HEIGHT, fill, border);
+        context.fill(left + 1, top + 1, left + 4, top + ROW_HEIGHT - 1, enabled ? 0xFF6EE7B7 : 0xFF33404B);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("XRay"), left + 12, top + 8, 0xFFF5F7FA);
+        context.drawTextWithShadow(this.textRenderer, Text.literal(xrayTypesOpen ? "Ore types" : "Ore boxes"), left + 12, top + 24, 0xFF8E9BA8);
+        drawDropdownButton(context, typeButtonLeft(right), top + 10, TYPE_BUTTON_WIDTH, 20, "ORE", oreHovered || xrayTypesOpen);
         drawCheckbox(context, right - 24, top + 13, enabled);
     }
 
@@ -620,6 +730,19 @@ public class WeikhackPanelScreen extends Screen {
         context.fill(left + 1, top + 1, left + 4, top + CHEST_OPTION_HEIGHT - 1, enabled ? color : 0xFF33404B);
         context.fill(left + 11, top + 8, left + 17, top + 14, color);
         context.drawTextWithShadow(this.textRenderer, Text.literal(label), left + 24, top + 7, enabled ? 0xFFF5F7FA : 0xFF8E9BA8);
+        drawCheckbox(context, right - 24, top + 5, enabled);
+    }
+
+    private void drawXrayOption(DrawContext context, int mouseX, int mouseY, int left, int top, int right, WeikhackMod.XrayOre ore, int color) {
+        boolean enabled = WeikhackMod.isXrayOreEnabled(ore);
+        boolean masterEnabled = WeikhackMod.isXrayEnabled();
+        boolean hovered = isHover(mouseX, mouseY, left, top, right - left, CHEST_OPTION_HEIGHT);
+        int border = enabled ? color : 0xFF27323D;
+        int fill = enabled && masterEnabled ? 0xFF0D271F : hovered ? 0xFF151F2A : 0xFF0F151D;
+        fillBox(context, left, top, right, top + CHEST_OPTION_HEIGHT, fill, border);
+        context.fill(left + 1, top + 1, left + 4, top + CHEST_OPTION_HEIGHT - 1, enabled ? color : 0xFF33404B);
+        context.fill(left + 11, top + 8, left + 17, top + 14, color);
+        context.drawTextWithShadow(this.textRenderer, Text.literal(ore.label()), left + 24, top + 7, enabled ? 0xFFF5F7FA : 0xFF8E9BA8);
         drawCheckbox(context, right - 24, top + 5, enabled);
     }
 
@@ -658,6 +781,18 @@ public class WeikhackPanelScreen extends Screen {
         context.drawTextWithShadow(this.textRenderer, Text.literal(speed), right - 50, top + 8, active ? 0xFF6EE7B7 : 0xFF8E9BA8);
         drawCheckbox(context, right - 24, top + 8, active);
         drawSlider(context, left + 14, top + 43, right - 14, WeikhackMod.getSpeedSliderValue(), active);
+    }
+
+    private void drawBoatFlyRow(DrawContext context, int mouseX, int mouseY, int left, int top, int right) {
+        boolean active = WeikhackMod.isBoatFlyEnabled();
+        boolean hovered = isHover(mouseX, mouseY, left, top, right - left, SPEED_ROW_HEIGHT);
+        fillBox(context, left, top, right, top + SPEED_ROW_HEIGHT, active ? 0xFF102720 : hovered ? 0xFF151F2A : 0xFF0F151D, active ? 0xFF6EE7B7 : 0xFF27323D);
+        context.fill(left + 1, top + 1, left + 4, top + SPEED_ROW_HEIGHT - 1, active ? 0xFF6EE7B7 : 0xFF33404B);
+        context.drawTextWithShadow(this.textRenderer, Text.literal("BoatFly"), left + 12, top + 8, 0xFFF5F7FA);
+        String speed = String.format(Locale.ROOT, "%.1fx", WeikhackMod.getBoatFlySpeedMultiplier());
+        context.drawTextWithShadow(this.textRenderer, Text.literal(speed), right - 50, top + 8, active ? 0xFF6EE7B7 : 0xFF8E9BA8);
+        drawCheckbox(context, right - 24, top + 8, active);
+        drawSlider(context, left + 14, top + 43, right - 14, WeikhackMod.getBoatFlySliderValue(), active);
     }
 
     private void drawJumpRow(DrawContext context, int mouseX, int mouseY, int left, int top, int right) {
@@ -812,6 +947,16 @@ public class WeikhackPanelScreen extends Screen {
         WeikhackMod.setSpeedSliderValue(clamp(value, 0.0D, 1.0D));
     }
 
+    private void updateBoatFlyFromMouse(double mouseX) {
+        int panelWidth = panelWidth();
+        int left = panelLeft(panelWidth) + SIDEBAR_WIDTH + CONTENT_PAD;
+        int right = panelLeft(panelWidth) + panelWidth - CONTENT_PAD;
+        int sliderLeft = left + 14;
+        int sliderRight = right - 14;
+        double value = (mouseX - sliderLeft) / (double) (sliderRight - sliderLeft);
+        WeikhackMod.setBoatFlySliderValue(clamp(value, 0.0D, 1.0D));
+    }
+
     private void updateJumpFromMouse(double mouseX) {
         int panelWidth = panelWidth();
         int left = panelLeft(panelWidth) + SIDEBAR_WIDTH + CONTENT_PAD;
@@ -855,7 +1000,7 @@ public class WeikhackPanelScreen extends Screen {
 
     private int moduleContentHeight() {
         if (selectedCategory == Category.MOVEMENT) {
-            return ROW_HEIGHT + ROW_GAP + SPEED_ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + SPEED_ROW_HEIGHT + ROW_GAP + ROW_HEIGHT;
+            return ROW_HEIGHT + ROW_GAP + SPEED_ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + SPEED_ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + SPEED_ROW_HEIGHT + ROW_GAP + ROW_HEIGHT;
         }
         if (selectedCategory == Category.COMBAT) {
             return combatContentHeight();
@@ -867,15 +1012,18 @@ public class WeikhackPanelScreen extends Screen {
             return renderContentHeight();
         }
         if (selectedCategory == Category.PLAYER) {
-            return ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT;
+            return ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT;
         }
         return 62;
     }
 
     private int renderContentHeight() {
-        int height = ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT;
+        int height = ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT + ROW_GAP + ROW_HEIGHT;
         if (chestTypesOpen) {
             height += CHEST_OPTION_TOP_GAP + CHEST_TYPE_COUNT * CHEST_OPTION_HEIGHT + (CHEST_TYPE_COUNT - 1) * CHEST_OPTION_GAP;
+        }
+        if (xrayTypesOpen) {
+            height += CHEST_OPTION_TOP_GAP + XRAY_ORE_COUNT * CHEST_OPTION_HEIGHT + (XRAY_ORE_COUNT - 1) * CHEST_OPTION_GAP;
         }
         return height;
     }
@@ -935,9 +1083,9 @@ public class WeikhackPanelScreen extends Screen {
     }
 
     private enum Category {
-        MOVEMENT("Movement", "8 modules"),
+        MOVEMENT("Movement", "11 modules"),
         COMBAT("Combat", "2 modules"),
-        RENDER("Render", "6 modules"),
+        RENDER("Render", "7 modules"),
         PLAYER("Player", "5 modules"),
         MISC("Misc", "3 modules");
 

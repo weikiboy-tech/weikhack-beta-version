@@ -33,6 +33,7 @@ public final class WeikhackCommands {
             case "save", "saveconfig", "configsave" -> WeikhackMod.saveConfig(client, true);
             case "list", "modules" -> showModules(client);
             case "speed" -> handleSpeed(client, parts);
+            case "boatspeed", "boatflyspeed" -> handleBoatSpeed(client, parts);
             case "reset" -> WeikhackMod.reset(client);
             default -> send(client, "Unbekannter Befehl. Nutze .help");
         }
@@ -66,6 +67,7 @@ public final class WeikhackCommands {
         send(client, ".toggle <modul>  |  Modul an/aus");
         send(client, ".bind <modul> <taste>  |  Taste setzen");
         send(client, ".speed <1.0-6.0>  |  Speed einstellen");
+        send(client, ".boatspeed <0.5-3.0>  |  BoatFly einstellen");
         send(client, "Mehr: .help modules, .help binds, .help config");
     }
 
@@ -156,11 +158,25 @@ public final class WeikhackCommands {
         }
     }
 
+    private static void handleBoatSpeed(MinecraftClient client, String[] parts) {
+        if (parts.length < 2) {
+            send(client, "Aktueller BoatFly Speed: " + String.format(Locale.ROOT, "%.1fx", WeikhackMod.getBoatFlySpeedMultiplier()));
+            return;
+        }
+
+        try {
+            float speed = Float.parseFloat(parts[1].replace(',', '.'));
+            WeikhackMod.setBoatFlySpeedMultiplier(speed, client, true);
+        } catch (NumberFormatException ignored) {
+            send(client, "Nutzung: .boatspeed <0.5-3.0>");
+        }
+    }
+
     private static void showModules(MinecraftClient client) {
-        send(client, "Movement: flight, speed, nofall, safewalk, novelo, autosprint, jumpheight, noslowdown");
-        send(client, "Render: esp, chestesp, xray, healthbars, fullbright, deathmarker");
+        send(client, "Movement: flight, speed, nofall, safewalk, novelo, autosprint, boatfly, elytraboost, airjump, jumpheight, noslowdown");
+        send(client, "Render: esp, chestesp, xray, healthbars, fullbright, noweather, deathmarker");
         send(client, "Combat: killaura, noknockback");
-        send(client, "Player: cheststealer, freecam, autoarmor, autototem, fastplace");
+        send(client, "Player: cheststealer, freecam, autoarmor, autototem, autotool, fastplace");
         send(client, "Misc: activelist, fakelag");
     }
 

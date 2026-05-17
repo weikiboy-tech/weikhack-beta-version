@@ -16,9 +16,11 @@
     "MinecraftClientMixin",
     "MouseMixin",
     "PlayerEntityMixin",
+    "PlayerInventoryAccessor",
     "RenderLayerAccessor",
     "RenderPipelinesAccessor",
     "SimpleOptionAccessor",
+    "SoundManagerMixin",
     "WorldRendererMixin"
   ],
   "injectors": {

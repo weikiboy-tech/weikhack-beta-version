@@ -1,16 +1,23 @@
 package com.example.weikhack;
 
 import com.example.weikhack.mixin.EntityAccessor;
+import com.example.weikhack.mixin.PlayerInventoryAccessor;
 import com.example.weikhack.mixin.SimpleOptionAccessor;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.vehicle.AbstractBoatEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -19,11 +26,17 @@ import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.c2s.play.ClientCommandC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInputC2SPacket;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import org.lwjgl.glfw.GLFW;
@@ -39,6 +52,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,6 +70,8 @@ public class WeikhackMod implements ClientModInitializer {
 
     private static final float MIN_SPEED_MULTIPLIER = 1.0F;
     private static final float MAX_SPEED_MULTIPLIER = 6.0F;
+    private static final float MIN_BOAT_FLY_SPEED = 0.5F;
+    private static final float MAX_BOAT_FLY_SPEED = 3.0F;
     private static final float MIN_JUMP_BLOCKS = 1.0F;
     private static final float MAX_JUMP_BLOCKS = 5.0F;
     private static final float DEFAULT_WALK_SPEED = 0.1F;
@@ -72,6 +88,48 @@ public class WeikhackMod implements ClientModInitializer {
     private static final int FAKE_LAG_MAX_QUEUE = 120;
     private static final float KILL_AURA_MIN_COOLDOWN = 0.98F;
     private static final int AUTO_EQUIP_COOLDOWN_TICKS = 4;
+    private static final Set<String> KILL_AURA_HOSTILE_ENTITY_IDS = Set.of(
+            "minecraft:blaze",
+            "minecraft:bogged",
+            "minecraft:breeze",
+            "minecraft:camel_husk",
+            "minecraft:cave_spider",
+            "minecraft:creaking",
+            "minecraft:creeper",
+            "minecraft:drowned",
+            "minecraft:elder_guardian",
+            "minecraft:ender_dragon",
+            "minecraft:endermite",
+            "minecraft:evoker",
+            "minecraft:ghast",
+            "minecraft:giant",
+            "minecraft:guardian",
+            "minecraft:hoglin",
+            "minecraft:husk",
+            "minecraft:illusioner",
+            "minecraft:magma_cube",
+            "minecraft:phantom",
+            "minecraft:piglin_brute",
+            "minecraft:pillager",
+            "minecraft:ravager",
+            "minecraft:shulker",
+            "minecraft:silverfish",
+            "minecraft:skeleton",
+            "minecraft:slime",
+            "minecraft:spider",
+            "minecraft:stray",
+            "minecraft:vex",
+            "minecraft:vindicator",
+            "minecraft:warden",
+            "minecraft:witch",
+            "minecraft:wither",
+            "minecraft:wither_skeleton",
+            "minecraft:zoglin",
+            "minecraft:zombie",
+            "minecraft:zombie_nautilus",
+            "minecraft:zombie_villager",
+            "minecraft:zombified_piglin"
+    );
 
     private static boolean menuKeyWasDown;
     private static boolean flightEnabled;
@@ -79,6 +137,7 @@ public class WeikhackMod implements ClientModInitializer {
     private static boolean espEnabled;
     private static boolean chestEspEnabled;
     private static boolean fullBrightEnabled;
+    private static boolean noWeatherEnabled;
     private static boolean noKnockbackEnabled;
     private static boolean killAuraEnabled;
     private static boolean killAuraMobsEnabled;
@@ -88,6 +147,10 @@ public class WeikhackMod implements ClientModInitializer {
     private static boolean noVeloEnabled;
     private static boolean autoSprintEnabled;
     private static boolean autoSprintAllDirections;
+    private static boolean boatFlyEnabled;
+    private static boolean elytraBoostEnabled;
+    private static boolean airJumpEnabled;
+    private static boolean airJumpWasDown;
     private static boolean jumpHeightEnabled;
     private static boolean jumpHeightApplied;
     private static boolean chestEspChests;
@@ -97,9 +160,11 @@ public class WeikhackMod implements ClientModInitializer {
     private static boolean chestEspShulkers;
     private static boolean activeListEnabled = true;
     private static boolean xrayEnabled;
+    private static final Map<XrayOre, Boolean> xrayOreOptions = new EnumMap<>(XrayOre.class);
     private static boolean healthBarsEnabled;
     private static boolean autoArmorEnabled;
     private static boolean autoTotemEnabled;
+    private static boolean autoToolEnabled;
     private static boolean noSlowdownEnabled;
     private static boolean fastPlaceEnabled;
     private static boolean deathMarkerEnabled;
@@ -109,6 +174,7 @@ public class WeikhackMod implements ClientModInitializer {
     private static boolean deathMarkerAttackWasDown;
     private static boolean releasingFakeLagPackets;
     private static float speedMultiplier = MIN_SPEED_MULTIPLIER;
+    private static float boatFlySpeedMultiplier = MIN_SPEED_MULTIPLIER;
     private static float jumpHeightBlocks = MIN_JUMP_BLOCKS;
     private static Vec3d freecamAnchor;
     private static Vec3d previousFreecamPosition;
@@ -119,6 +185,7 @@ public class WeikhackMod implements ClientModInitializer {
     private static float freecamBodyPitch;
     private static Vec3d lastDeathPosition;
     private static String lastDeathDimension;
+    private static Entity lastBoatFlyVehicle;
     private static final Set<UUID> espGlowingPlayers = new HashSet<>();
     private static final Map<String, Integer> keyBinds = new LinkedHashMap<>();
     private static final Set<String> pressedBindModules = new HashSet<>();
@@ -129,6 +196,7 @@ public class WeikhackMod implements ClientModInitializer {
     private static final List<QueuedPacket> fakeLagQueue = new ArrayList<>();
 
     static {
+        resetDefaultXrayOres();
         resetDefaultBinds();
     }
 
@@ -155,10 +223,13 @@ public class WeikhackMod implements ClientModInitializer {
         }
 
         applyFullBright(client);
+        applyNoWeather(client);
 
         if (client.player != null) {
             applyAbilities(client);
             applySpeedHack(client);
+            applyBoatFly(client);
+            applyElytraBoost(client);
             applyMovementHelpers(client);
             applyNoFall(client);
             applyEsp(client);
@@ -166,6 +237,7 @@ public class WeikhackMod implements ClientModInitializer {
             applyChestStealer(client);
             applyAutoTotem(client);
             applyAutoArmor(client);
+            applyAutoTool(client);
             updateDeathMarker(client);
             handleDeathMarkerClearClick(client);
             tickFakeLag(client);
@@ -173,6 +245,7 @@ public class WeikhackMod implements ClientModInitializer {
             espGlowingPlayers.clear();
             wasPlayerDead = false;
             deathMarkerAttackWasDown = false;
+            clearBoatFlyVehicle();
             flushFakeLagPackets();
         }
     }
@@ -217,6 +290,10 @@ public class WeikhackMod implements ClientModInitializer {
 
     public static boolean isFullBrightEnabled() {
         return fullBrightEnabled;
+    }
+
+    public static boolean isNoWeatherEnabled() {
+        return noWeatherEnabled;
     }
 
     public static boolean isNoKnockbackEnabled() {
@@ -321,6 +398,18 @@ public class WeikhackMod implements ClientModInitializer {
         return autoSprintAllDirections;
     }
 
+    public static boolean isBoatFlyEnabled() {
+        return boatFlyEnabled;
+    }
+
+    public static boolean isElytraBoostEnabled() {
+        return elytraBoostEnabled;
+    }
+
+    public static boolean isAirJumpEnabled() {
+        return airJumpEnabled;
+    }
+
     public static boolean isJumpHeightEnabled() {
         return jumpHeightEnabled;
     }
@@ -353,6 +442,10 @@ public class WeikhackMod implements ClientModInitializer {
         return xrayEnabled;
     }
 
+    public static boolean isXrayOreEnabled(XrayOre ore) {
+        return Boolean.TRUE.equals(xrayOreOptions.get(ore));
+    }
+
     public static boolean isHealthBarsEnabled() {
         return healthBarsEnabled;
     }
@@ -363,6 +456,10 @@ public class WeikhackMod implements ClientModInitializer {
 
     public static boolean isAutoTotemEnabled() {
         return autoTotemEnabled;
+    }
+
+    public static boolean isAutoToolEnabled() {
+        return autoToolEnabled;
     }
 
     public static boolean isNoSlowdownEnabled() {
@@ -448,6 +545,14 @@ public class WeikhackMod implements ClientModInitializer {
         }
     }
 
+    public static void setNoWeatherEnabled(boolean enabled, MinecraftClient client, boolean notify) {
+        noWeatherEnabled = enabled;
+        applyNoWeather(client);
+        if (notify) {
+            sendStatus(client, enabled ? "NoWeather: an" : "NoWeather: aus");
+        }
+    }
+
     public static void setNoKnockbackEnabled(boolean enabled, MinecraftClient client, boolean notify) {
         noKnockbackEnabled = enabled;
         if (notify) {
@@ -512,6 +617,31 @@ public class WeikhackMod implements ClientModInitializer {
         }
     }
 
+    public static void setBoatFlyEnabled(boolean enabled, MinecraftClient client, boolean notify) {
+        boatFlyEnabled = enabled;
+        if (!enabled) {
+            clearBoatFlyVehicle();
+        }
+        if (notify) {
+            sendStatus(client, enabled ? "BoatFly: an" : "BoatFly: aus");
+        }
+    }
+
+    public static void setElytraBoostEnabled(boolean enabled, MinecraftClient client, boolean notify) {
+        elytraBoostEnabled = enabled;
+        if (notify) {
+            sendStatus(client, enabled ? "ElytraBoost: an" : "ElytraBoost: aus");
+        }
+    }
+
+    public static void setAirJumpEnabled(boolean enabled, MinecraftClient client, boolean notify) {
+        airJumpEnabled = enabled;
+        airJumpWasDown = false;
+        if (notify) {
+            sendStatus(client, enabled ? "AirJump: an" : "AirJump: aus");
+        }
+    }
+
     public static void setJumpHeightEnabled(boolean enabled, MinecraftClient client, boolean notify) {
         jumpHeightEnabled = enabled;
         if (!enabled) {
@@ -556,6 +686,13 @@ public class WeikhackMod implements ClientModInitializer {
         }
     }
 
+    public static void setXrayOreEnabled(XrayOre ore, boolean enabled, MinecraftClient client, boolean notify) {
+        xrayOreOptions.put(ore, enabled);
+        if (notify) {
+            sendStatus(client, ore.label() + ": " + (enabled ? "an" : "aus"));
+        }
+    }
+
     public static void setHealthBarsEnabled(boolean enabled, MinecraftClient client, boolean notify) {
         healthBarsEnabled = enabled;
         if (notify) {
@@ -576,6 +713,13 @@ public class WeikhackMod implements ClientModInitializer {
         autoEquipCooldownTicks = 0;
         if (notify) {
             sendStatus(client, enabled ? "AutoTotem: an" : "AutoTotem: aus");
+        }
+    }
+
+    public static void setAutoToolEnabled(boolean enabled, MinecraftClient client, boolean notify) {
+        autoToolEnabled = enabled;
+        if (notify) {
+            sendStatus(client, enabled ? "AutoTool: an" : "AutoTool: aus");
         }
     }
 
@@ -630,18 +774,23 @@ public class WeikhackMod implements ClientModInitializer {
             case "esp" -> setEspEnabled(!isEspEnabled(), client, notify);
             case "chestesp" -> setChestEspEnabled(!isChestEspEnabled(), client, notify);
             case "fullbright" -> setFullBrightEnabled(!isFullBrightEnabled(), client, notify);
+            case "noweather" -> setNoWeatherEnabled(!isNoWeatherEnabled(), client, notify);
             case "noknockback" -> setNoKnockbackEnabled(!isNoKnockbackEnabled(), client, notify);
             case "killaura" -> setKillAuraEnabled(!isKillAuraEnabled(), client, notify);
             case "cheststealer" -> setChestStealerEnabled(!isChestStealerEnabled(), client, notify);
             case "freecam" -> setFreecamEnabled(!isFreecamEnabled(), client, notify);
             case "novelo" -> setNoVeloEnabled(!isNoVeloEnabled(), client, notify);
             case "autosprint" -> setAutoSprintEnabled(!isAutoSprintEnabled(), client, notify);
+            case "boatfly" -> setBoatFlyEnabled(!isBoatFlyEnabled(), client, notify);
+            case "elytraboost" -> setElytraBoostEnabled(!isElytraBoostEnabled(), client, notify);
+            case "airjump" -> setAirJumpEnabled(!isAirJumpEnabled(), client, notify);
             case "jumpheight" -> setJumpHeightEnabled(!isJumpHeightEnabled(), client, notify);
             case "activelist" -> setActiveListEnabled(!isActiveListEnabled(), client, notify);
             case "xray" -> setXrayEnabled(!isXrayEnabled(), client, notify);
             case "healthbars" -> setHealthBarsEnabled(!isHealthBarsEnabled(), client, notify);
             case "autoarmor" -> setAutoArmorEnabled(!isAutoArmorEnabled(), client, notify);
             case "autototem" -> setAutoTotemEnabled(!isAutoTotemEnabled(), client, notify);
+            case "autotool" -> setAutoToolEnabled(!isAutoToolEnabled(), client, notify);
             case "noslowdown" -> setNoSlowdownEnabled(!isNoSlowdownEnabled(), client, notify);
             case "fastplace" -> setFastPlaceEnabled(!isFastPlaceEnabled(), client, notify);
             case "deathmarker" -> setDeathMarkerEnabled(!isDeathMarkerEnabled(), client, notify);
@@ -692,17 +841,22 @@ public class WeikhackMod implements ClientModInitializer {
         properties.setProperty("module.esp", Boolean.toString(espEnabled));
         properties.setProperty("module.chestEsp", Boolean.toString(chestEspEnabled));
         properties.setProperty("module.fullBright", Boolean.toString(fullBrightEnabled));
+        properties.setProperty("module.noWeather", Boolean.toString(noWeatherEnabled));
         properties.setProperty("module.noKnockback", Boolean.toString(noKnockbackEnabled));
         properties.setProperty("module.killAura", Boolean.toString(killAuraEnabled));
         properties.setProperty("module.chestStealer", Boolean.toString(chestStealerEnabled));
         properties.setProperty("module.freecam", Boolean.toString(freecamEnabled));
         properties.setProperty("module.noVelo", Boolean.toString(noVeloEnabled));
         properties.setProperty("module.autoSprint", Boolean.toString(autoSprintEnabled));
+        properties.setProperty("module.boatFly", Boolean.toString(boatFlyEnabled));
+        properties.setProperty("module.elytraBoost", Boolean.toString(elytraBoostEnabled));
+        properties.setProperty("module.airJump", Boolean.toString(airJumpEnabled));
         properties.setProperty("module.jumpHeight", Boolean.toString(jumpHeightEnabled));
         properties.setProperty("module.xray", Boolean.toString(xrayEnabled));
         properties.setProperty("module.healthBars", Boolean.toString(healthBarsEnabled));
         properties.setProperty("module.autoArmor", Boolean.toString(autoArmorEnabled));
         properties.setProperty("module.autoTotem", Boolean.toString(autoTotemEnabled));
+        properties.setProperty("module.autoTool", Boolean.toString(autoToolEnabled));
         properties.setProperty("module.noSlowdown", Boolean.toString(noSlowdownEnabled));
         properties.setProperty("module.fastPlace", Boolean.toString(fastPlaceEnabled));
         properties.setProperty("module.deathMarker", Boolean.toString(deathMarkerEnabled));
@@ -716,8 +870,12 @@ public class WeikhackMod implements ClientModInitializer {
         properties.setProperty("option.chestEspEnderChests", Boolean.toString(chestEspEnderChests));
         properties.setProperty("option.chestEspBarrels", Boolean.toString(chestEspBarrels));
         properties.setProperty("option.chestEspShulkers", Boolean.toString(chestEspShulkers));
+        for (XrayOre ore : XrayOre.values()) {
+            properties.setProperty("option.xray." + ore.configKey(), Boolean.toString(isXrayOreEnabled(ore)));
+        }
         properties.setProperty("option.activeList", Boolean.toString(activeListEnabled));
         properties.setProperty("speed.multiplier", Float.toString(speedMultiplier));
+        properties.setProperty("boatFly.speed", Float.toString(boatFlySpeedMultiplier));
         properties.setProperty("jump.blocks", Float.toString(jumpHeightBlocks));
         properties.setProperty("binds.saved", "true");
         for (Map.Entry<String, Integer> bind : keyBinds.entrySet()) {
@@ -757,18 +915,23 @@ public class WeikhackMod implements ClientModInitializer {
             case "esp", "playeresp", "player" -> "esp";
             case "chest", "chests", "chestesp", "storageesp", "kistenesp" -> "chestesp";
             case "fullbright", "bright", "brightness", "gamma", "light" -> "fullbright";
+            case "noweather", "weather", "clearweather", "norain", "nosnow", "rain" -> "noweather";
             case "nokb", "kb", "velocity", "antiknockback", "noknockback" -> "noknockback";
             case "killaura", "aura", "ka", "mobaura" -> "killaura";
             case "cheststealer", "stealer", "loot", "autoloot" -> "cheststealer";
             case "freecam", "camera" -> "freecam";
             case "novelo", "nvelo", "constantvelocity", "constantvelo" -> "novelo";
             case "autosprint", "sprint" -> "autosprint";
+            case "boatfly", "boat", "boatflight", "bootfly", "bootflug" -> "boatfly";
+            case "elytraboost", "elytra", "elytrafly", "elytraflight", "rocketboost" -> "elytraboost";
+            case "airjump", "doublejump", "doppelsprung" -> "airjump";
             case "jumpheight", "jump", "highjump", "sprunghoehe", "sprunghöhe" -> "jumpheight";
             case "activelist", "active", "hud", "arraylist" -> "activelist";
             case "xray", "oreesp", "ores" -> "xray";
             case "healthbars", "healthbar", "hpbar", "hp" -> "healthbars";
             case "autoarmor", "armor" -> "autoarmor";
             case "autototem", "totem" -> "autototem";
+            case "autotool", "tool", "tools", "besttool", "weapon", "bestweapon" -> "autotool";
             case "noslowdown", "noslow", "nslow" -> "noslowdown";
             case "fastplace", "place" -> "fastplace";
             case "deathmarker", "death", "waypoint", "deathwaypoint", "tod", "todmarker", "todesmarker" -> "deathmarker";
@@ -791,18 +954,23 @@ public class WeikhackMod implements ClientModInitializer {
             case "esp" -> "ESP";
             case "chestesp" -> "Chest ESP";
             case "fullbright" -> "FullBright";
+            case "noweather" -> "NoWeather";
             case "noknockback" -> "NoKnockback";
             case "killaura" -> "KillAura";
             case "cheststealer" -> "Chest Stealer";
             case "freecam" -> "Freecam";
             case "novelo" -> "NoVelo";
             case "autosprint" -> "AutoSprint";
+            case "boatfly" -> "BoatFly";
+            case "elytraboost" -> "ElytraBoost";
+            case "airjump" -> "AirJump";
             case "jumpheight" -> "JumpHeight";
             case "activelist" -> "Active List";
             case "xray" -> "XRay";
             case "healthbars" -> "HealthBars";
             case "autoarmor" -> "AutoArmor";
             case "autototem" -> "AutoTotem";
+            case "autotool" -> "AutoTool";
             case "noslowdown" -> "NoSlowdown";
             case "fastplace" -> "FastPlace";
             case "deathmarker" -> "Death Marker";
@@ -862,6 +1030,15 @@ public class WeikhackMod implements ClientModInitializer {
         if (autoSprintEnabled) {
             modules.add("AutoSprint");
         }
+        if (boatFlyEnabled) {
+            modules.add("BoatFly " + String.format(Locale.ROOT, "%.1fx", boatFlySpeedMultiplier));
+        }
+        if (elytraBoostEnabled) {
+            modules.add("ElytraBoost");
+        }
+        if (airJumpEnabled) {
+            modules.add("AirJump");
+        }
         if (jumpHeightEnabled) {
             modules.add("Jump " + String.format(Locale.ROOT, "%.1f", jumpHeightBlocks) + "b");
         }
@@ -879,6 +1056,9 @@ public class WeikhackMod implements ClientModInitializer {
         }
         if (fullBrightEnabled) {
             modules.add("FullBright");
+        }
+        if (noWeatherEnabled) {
+            modules.add("NoWeather");
         }
         if (deathMarkerEnabled) {
             modules.add("Death Marker");
@@ -901,6 +1081,9 @@ public class WeikhackMod implements ClientModInitializer {
         if (autoTotemEnabled) {
             modules.add("AutoTotem");
         }
+        if (autoToolEnabled) {
+            modules.add("AutoTool");
+        }
         if (noSlowdownEnabled) {
             modules.add("NoSlowdown");
         }
@@ -922,12 +1105,46 @@ public class WeikhackMod implements ClientModInitializer {
                 && !entity.isSpectator();
     }
 
+    public static boolean shouldBlockWeatherSound(SoundInstance sound) {
+        if (!noWeatherEnabled || sound == null || sound.getId() == null) {
+            return false;
+        }
+
+        String id = sound.getId().toString();
+        return sound.getCategory() == SoundCategory.WEATHER
+                || id.equals("minecraft:weather.rain")
+                || id.equals("minecraft:weather.rain.above")
+                || id.equals("minecraft:entity.lightning_bolt.thunder")
+                || id.equals("minecraft:item.trident.thunder")
+                || id.startsWith("minecraft:weather.");
+    }
+
     public static float getSpeedMultiplier() {
         return speedMultiplier;
     }
 
     public static boolean hasSpeedBoost() {
         return getSpeedMultiplier() > 1.0F;
+    }
+
+    public static float getBoatFlySpeedMultiplier() {
+        return boatFlySpeedMultiplier;
+    }
+
+    public static double getBoatFlySliderValue() {
+        return (boatFlySpeedMultiplier - MIN_BOAT_FLY_SPEED) / (MAX_BOAT_FLY_SPEED - MIN_BOAT_FLY_SPEED);
+    }
+
+    public static void setBoatFlySliderValue(double value) {
+        float multiplier = MIN_BOAT_FLY_SPEED + (float) value * (MAX_BOAT_FLY_SPEED - MIN_BOAT_FLY_SPEED);
+        setBoatFlySpeedMultiplier(multiplier, MinecraftClient.getInstance(), false);
+    }
+
+    public static void setBoatFlySpeedMultiplier(float multiplier, MinecraftClient client, boolean notify) {
+        boatFlySpeedMultiplier = clampBoatFlySpeed(multiplier);
+        if (notify) {
+            sendStatus(client, "BoatFly Speed: " + String.format(Locale.ROOT, "%.1fx", boatFlySpeedMultiplier));
+        }
     }
 
     public static void cycleSpeed(MinecraftClient client) {
@@ -1019,14 +1236,18 @@ public class WeikhackMod implements ClientModInitializer {
                 chestEspEnderChests = true;
                 chestEspBarrels = true;
                 chestEspShulkers = true;
+                setAllXrayOres(true);
                 noFallEnabled = true;
                 safeWalkEnabled = true;
                 deathMarkerEnabled = true;
             }
             case "travel" -> {
                 speedMultiplier = 2.0F;
+                boatFlySpeedMultiplier = 1.6F;
                 autoSprintEnabled = true;
                 autoSprintAllDirections = true;
+                boatFlyEnabled = true;
+                elytraBoostEnabled = true;
                 noFallEnabled = true;
                 safeWalkEnabled = true;
                 deathMarkerEnabled = true;
@@ -1043,6 +1264,7 @@ public class WeikhackMod implements ClientModInitializer {
                 autoSprintAllDirections = true;
                 autoArmorEnabled = true;
                 autoTotemEnabled = true;
+                autoToolEnabled = true;
                 fastPlaceEnabled = true;
                 espEnabled = true;
                 healthBarsEnabled = true;
@@ -1081,6 +1303,7 @@ public class WeikhackMod implements ClientModInitializer {
         espEnabled = false;
         chestEspEnabled = false;
         fullBrightEnabled = false;
+        noWeatherEnabled = false;
         noKnockbackEnabled = false;
         killAuraEnabled = false;
         killAuraMobsEnabled = false;
@@ -1090,12 +1313,17 @@ public class WeikhackMod implements ClientModInitializer {
         noVeloEnabled = false;
         autoSprintEnabled = false;
         autoSprintAllDirections = false;
+        setBoatFlyEnabled(false, null, false);
+        elytraBoostEnabled = false;
+        airJumpEnabled = false;
+        airJumpWasDown = false;
         jumpHeightEnabled = false;
         jumpHeightApplied = false;
         xrayEnabled = false;
         healthBarsEnabled = false;
         autoArmorEnabled = false;
         autoTotemEnabled = false;
+        autoToolEnabled = false;
         noSlowdownEnabled = false;
         fastPlaceEnabled = false;
         deathMarkerEnabled = false;
@@ -1107,8 +1335,10 @@ public class WeikhackMod implements ClientModInitializer {
         chestEspEnderChests = false;
         chestEspBarrels = false;
         chestEspShulkers = false;
+        resetDefaultXrayOres();
         activeListEnabled = true;
         speedMultiplier = MIN_SPEED_MULTIPLIER;
+        boatFlySpeedMultiplier = MIN_SPEED_MULTIPLIER;
         jumpHeightBlocks = MIN_JUMP_BLOCKS;
         autoEquipCooldownTicks = 0;
     }
@@ -1176,6 +1406,94 @@ public class WeikhackMod implements ClientModInitializer {
         client.player.setVelocity(direction.x * targetSpeed, velocity.y, direction.z * targetSpeed);
     }
 
+    private static void applyBoatFly(MinecraftClient client) {
+        if (client.player == null || client.options == null) {
+            clearBoatFlyVehicle();
+            return;
+        }
+
+        Entity vehicle = client.player.getVehicle();
+        if (!boatFlyEnabled || !(vehicle instanceof AbstractBoatEntity)) {
+            clearBoatFlyVehicle();
+            return;
+        }
+
+        lastBoatFlyVehicle = vehicle;
+        vehicle.setNoGravity(true);
+        vehicle.setOnGround(false);
+        vehicle.fallDistance = 0.0D;
+
+        int forward = pressed(client, client.options.forwardKey) - pressed(client, client.options.backKey);
+        int sideways = pressed(client, client.options.leftKey) - pressed(client, client.options.rightKey);
+        int vertical = pressed(client, client.options.jumpKey) - pressed(client, client.options.sprintKey);
+        double horizontalSpeed = 0.45D * boatFlySpeedMultiplier;
+        double verticalSpeed = 0.32D * boatFlySpeedMultiplier;
+
+        double x = 0.0D;
+        double z = 0.0D;
+        if (forward != 0 || sideways != 0) {
+            double yawRadians = Math.toRadians(client.player.getYaw());
+            double sin = Math.sin(yawRadians);
+            double cos = Math.cos(yawRadians);
+            x = forward * -sin + sideways * cos;
+            z = forward * cos + sideways * sin;
+            double length = Math.sqrt(x * x + z * z);
+            if (length > 1.0E-4D) {
+                x = x / length * horizontalSpeed;
+                z = z / length * horizontalSpeed;
+            }
+        }
+
+        vehicle.setYaw(client.player.getYaw());
+        vehicle.setVelocity(x, vertical * verticalSpeed, z);
+    }
+
+    private static void clearBoatFlyVehicle() {
+        if (lastBoatFlyVehicle != null) {
+            lastBoatFlyVehicle.setNoGravity(false);
+            lastBoatFlyVehicle = null;
+        }
+    }
+
+    private static void applyElytraBoost(MinecraftClient client) {
+        if (!elytraBoostEnabled
+                || client.player == null
+                || client.options == null
+                || client.player.hasVehicle()
+                || !client.player.isGliding()) {
+            return;
+        }
+
+        boolean boostPressed = client.options.forwardKey.isPressed() || client.options.sprintKey.isPressed();
+        if (!boostPressed) {
+            return;
+        }
+
+        Vec3d look = lookDirection(client.player.getYaw(), client.player.getPitch());
+        Vec3d velocity = client.player.getVelocity();
+        double acceleration = client.options.sprintKey.isPressed() ? 0.095D : 0.055D;
+        double maxSpeed = client.options.sprintKey.isPressed() ? 2.55D : 1.75D;
+        Vec3d boosted = velocity.add(look.multiply(acceleration));
+        double speed = boosted.length();
+        if (speed > maxSpeed) {
+            boosted = boosted.multiply(maxSpeed / speed);
+        }
+
+        client.player.setVelocity(boosted);
+        client.player.fallDistance = 0.0D;
+    }
+
+    private static Vec3d lookDirection(float yaw, float pitch) {
+        double yawRadians = Math.toRadians(yaw);
+        double pitchRadians = Math.toRadians(pitch);
+        double cosPitch = Math.cos(pitchRadians);
+        return new Vec3d(
+                -Math.sin(yawRadians) * cosPitch,
+                -Math.sin(pitchRadians),
+                Math.cos(yawRadians) * cosPitch
+        ).normalize();
+    }
+
     private static void applyMovementHelpers(MinecraftClient client) {
         if (client.player == null || client.options == null) {
             return;
@@ -1190,10 +1508,37 @@ public class WeikhackMod implements ClientModInitializer {
         }
 
         applyJumpHeight(client);
+        applyAirJump(client);
 
         if (freecamEnabled) {
             applyFreecamMovement(client);
         }
+    }
+
+    private static void applyAirJump(MinecraftClient client) {
+        boolean jumpDown = client.options.jumpKey.isPressed();
+        if (!airJumpEnabled
+                || client.player.hasVehicle()
+                || client.player.isSpectator()
+                || client.player.isTouchingWater()
+                || client.player.isInLava()) {
+            airJumpWasDown = jumpDown;
+            return;
+        }
+
+        if (client.player.isOnGround() || client.player.getAbilities().flying || client.player.isGliding()) {
+            airJumpWasDown = jumpDown;
+            return;
+        }
+
+        if (jumpDown && !airJumpWasDown) {
+            Vec3d velocity = client.player.getVelocity();
+            double jumpVelocity = jumpHeightEnabled ? 0.42D * Math.sqrt(jumpHeightBlocks) : 0.42D;
+            client.player.setVelocity(velocity.x, Math.max(jumpVelocity, 0.42D), velocity.z);
+            client.player.fallDistance = 0.0D;
+        }
+
+        airJumpWasDown = jumpDown;
     }
 
     private static void applyJumpHeight(MinecraftClient client) {
@@ -1365,6 +1710,18 @@ public class WeikhackMod implements ClientModInitializer {
         }
     }
 
+    private static void applyNoWeather(MinecraftClient client) {
+        if (!noWeatherEnabled || client == null || client.world == null) {
+            return;
+        }
+
+        client.world.setRainGradient(0.0F);
+        client.world.setThunderGradient(0.0F);
+        if (client.getSoundManager() != null) {
+            client.getSoundManager().stopSounds(null, SoundCategory.WEATHER);
+        }
+    }
+
     private static void applyNoFall(MinecraftClient client) {
         if (!noFallEnabled || client.player == null) {
             return;
@@ -1523,6 +1880,106 @@ public class WeikhackMod implements ClientModInitializer {
         }
     }
 
+    private static void applyAutoTool(MinecraftClient client) {
+        if (!autoToolEnabled
+                || client.currentScreen != null
+                || client.player == null
+                || client.world == null
+                || client.interactionManager == null
+                || freecamEnabled
+                || client.crosshairTarget == null) {
+            return;
+        }
+
+        HitResult target = client.crosshairTarget;
+        if (target instanceof EntityHitResult entityTarget && entityTarget.getEntity() instanceof LivingEntity) {
+            selectBestInventorySlot(WeikhackMod::weaponScore);
+            return;
+        }
+
+        if (target instanceof BlockHitResult blockTarget && target.getType() == HitResult.Type.BLOCK) {
+            BlockState state = client.world.getBlockState(blockTarget.getBlockPos());
+            if (!state.isAir()) {
+                selectBestInventorySlot(stack -> blockToolScore(stack, state));
+            }
+        }
+    }
+
+    private static void selectBestInventorySlot(java.util.function.ToIntFunction<ItemStack> scorer) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null || client.interactionManager == null) {
+            return;
+        }
+
+        PlayerInventoryAccessor inventory = (PlayerInventoryAccessor) client.player.getInventory();
+        int selectedSlot = inventory.weikhack$getSelectedSlot();
+        int currentScore = scorer.applyAsInt(client.player.getInventory().getStack(selectedSlot));
+        int bestSlot = selectedSlot;
+        int bestScore = currentScore;
+        for (int slot = 0; slot < 36; slot++) {
+            ItemStack stack = client.player.getInventory().getStack(slot);
+            int score = scorer.applyAsInt(stack);
+            if (score > bestScore) {
+                bestScore = score;
+                bestSlot = slot;
+            }
+        }
+
+        if (bestSlot == selectedSlot || bestScore <= 0) {
+            return;
+        }
+
+        if (bestSlot >= 0 && bestSlot < 9) {
+            inventory.weikhack$setSelectedSlot(bestSlot);
+            return;
+        }
+
+        int screenSlot = screenSlotForInventoryIndex(bestSlot);
+        if (screenSlot >= 0) {
+            client.interactionManager.clickSlot(client.player.playerScreenHandler.syncId, screenSlot, selectedSlot, SlotActionType.SWAP, client.player);
+        }
+    }
+
+    private static int blockToolScore(ItemStack stack, BlockState state) {
+        if (stack == null || stack.isEmpty()) {
+            return 0;
+        }
+
+        Item item = stack.getItem();
+        int toolScore = 0;
+        if (state.isIn(BlockTags.PICKAXE_MINEABLE) && isPickaxe(item)) {
+            toolScore = 5000;
+        } else if (state.isIn(BlockTags.AXE_MINEABLE) && isAxe(item)) {
+            toolScore = 5000;
+        } else if (state.isIn(BlockTags.SHOVEL_MINEABLE) && isShovel(item)) {
+            toolScore = 5000;
+        } else if (state.isIn(BlockTags.HOE_MINEABLE) && isHoe(item)) {
+            toolScore = 5000;
+        }
+
+        if (toolScore <= 0) {
+            return 0;
+        }
+
+        return toolScore + materialScore(item) * 100 + durabilityScore(stack);
+    }
+
+    private static int weaponScore(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return 0;
+        }
+
+        Item item = stack.getItem();
+        int base = swordDamage(item);
+        if (base <= 0) {
+            base = axeDamage(item);
+        }
+        if (base <= 0) {
+            return 0;
+        }
+        return base * 100 + durabilityScore(stack);
+    }
+
     private static int findInventoryItem(Item item) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null) {
@@ -1606,17 +2063,91 @@ public class WeikhackMod implements ClientModInitializer {
         return 0;
     }
 
+    private static boolean isPickaxe(Item item) {
+        return item == Items.NETHERITE_PICKAXE || item == Items.DIAMOND_PICKAXE || item == Items.IRON_PICKAXE || item == Items.STONE_PICKAXE || item == Items.GOLDEN_PICKAXE || item == Items.WOODEN_PICKAXE;
+    }
+
+    private static boolean isAxe(Item item) {
+        return item == Items.NETHERITE_AXE || item == Items.DIAMOND_AXE || item == Items.IRON_AXE || item == Items.STONE_AXE || item == Items.GOLDEN_AXE || item == Items.WOODEN_AXE;
+    }
+
+    private static boolean isShovel(Item item) {
+        return item == Items.NETHERITE_SHOVEL || item == Items.DIAMOND_SHOVEL || item == Items.IRON_SHOVEL || item == Items.STONE_SHOVEL || item == Items.GOLDEN_SHOVEL || item == Items.WOODEN_SHOVEL;
+    }
+
+    private static boolean isHoe(Item item) {
+        return item == Items.NETHERITE_HOE || item == Items.DIAMOND_HOE || item == Items.IRON_HOE || item == Items.STONE_HOE || item == Items.GOLDEN_HOE || item == Items.WOODEN_HOE;
+    }
+
+    private static int materialScore(Item item) {
+        if (item == Items.NETHERITE_PICKAXE || item == Items.NETHERITE_AXE || item == Items.NETHERITE_SHOVEL || item == Items.NETHERITE_HOE || item == Items.NETHERITE_SWORD) {
+            return 6;
+        }
+        if (item == Items.DIAMOND_PICKAXE || item == Items.DIAMOND_AXE || item == Items.DIAMOND_SHOVEL || item == Items.DIAMOND_HOE || item == Items.DIAMOND_SWORD) {
+            return 5;
+        }
+        if (item == Items.IRON_PICKAXE || item == Items.IRON_AXE || item == Items.IRON_SHOVEL || item == Items.IRON_HOE || item == Items.IRON_SWORD) {
+            return 4;
+        }
+        if (item == Items.STONE_PICKAXE || item == Items.STONE_AXE || item == Items.STONE_SHOVEL || item == Items.STONE_HOE || item == Items.STONE_SWORD) {
+            return 3;
+        }
+        if (item == Items.GOLDEN_PICKAXE || item == Items.GOLDEN_AXE || item == Items.GOLDEN_SHOVEL || item == Items.GOLDEN_HOE || item == Items.GOLDEN_SWORD) {
+            return 2;
+        }
+        if (item == Items.WOODEN_PICKAXE || item == Items.WOODEN_AXE || item == Items.WOODEN_SHOVEL || item == Items.WOODEN_HOE || item == Items.WOODEN_SWORD) {
+            return 1;
+        }
+        return 0;
+    }
+
+    private static int swordDamage(Item item) {
+        if (item == Items.NETHERITE_SWORD) {
+            return 8;
+        }
+        if (item == Items.DIAMOND_SWORD) {
+            return 7;
+        }
+        if (item == Items.IRON_SWORD) {
+            return 6;
+        }
+        if (item == Items.STONE_SWORD) {
+            return 5;
+        }
+        if (item == Items.GOLDEN_SWORD || item == Items.WOODEN_SWORD) {
+            return 4;
+        }
+        return 0;
+    }
+
+    private static int axeDamage(Item item) {
+        if (item == Items.NETHERITE_AXE || item == Items.DIAMOND_AXE || item == Items.IRON_AXE) {
+            return 9;
+        }
+        if (item == Items.STONE_AXE) {
+            return 9;
+        }
+        if (item == Items.WOODEN_AXE || item == Items.GOLDEN_AXE) {
+            return 7;
+        }
+        return 0;
+    }
+
+    private static int durabilityScore(ItemStack stack) {
+        return stack.isDamageable() ? Math.max(0, stack.getMaxDamage() - stack.getDamage()) / 25 : 0;
+    }
+
     private static Entity findKillAuraTarget(MinecraftClient client) {
         Entity nearestTarget = null;
         double nearestDistance = KILL_AURA_RANGE * KILL_AURA_RANGE;
 
         if (killAuraMobsEnabled) {
-            List<HostileEntity> targets = client.world.getEntitiesByClass(
-                    HostileEntity.class,
+            List<LivingEntity> targets = client.world.getEntitiesByClass(
+                    LivingEntity.class,
                     client.player.getBoundingBox().expand(KILL_AURA_RANGE),
-                    WeikhackMod::isValidKillAuraMob
+                    entity -> isValidKillAuraMob(client, entity)
             );
-            for (HostileEntity target : targets) {
+            for (LivingEntity target : targets) {
                 double distance = target.squaredDistanceTo(client.player);
                 if (distance <= nearestDistance) {
                     nearestDistance = distance;
@@ -1642,12 +2173,27 @@ public class WeikhackMod implements ClientModInitializer {
         return nearestTarget;
     }
 
-    private static boolean isValidKillAuraMob(HostileEntity entity) {
-        return entity != null
-                && entity.isAlive()
-                && !entity.isRemoved()
-                && !entity.isSpectator()
-                && entity.getHealth() > 0.0F;
+    private static boolean isValidKillAuraMob(MinecraftClient client, LivingEntity entity) {
+        if (entity == null
+                || entity == client.player
+                || entity instanceof PlayerEntity
+                || !entity.isAlive()
+                || entity.isRemoved()
+                || entity.isSpectator()
+                || entity.getHealth() <= 0.0F) {
+            return false;
+        }
+
+        if (entity instanceof HostileEntity || entity.getType().getSpawnGroup() == SpawnGroup.MONSTER) {
+            return true;
+        }
+
+        String entityId = Registries.ENTITY_TYPE.getId(entity.getType()).toString();
+        if (KILL_AURA_HOSTILE_ENTITY_IDS.contains(entityId)) {
+            return true;
+        }
+
+        return entity instanceof MobEntity mob && mob.getTarget() == client.player;
     }
 
     private static boolean isValidKillAuraPlayer(MinecraftClient client, PlayerEntity player) {
@@ -1718,17 +2264,22 @@ public class WeikhackMod implements ClientModInitializer {
         espEnabled = booleanProperty(properties, "module.esp", espEnabled);
         chestEspEnabled = booleanProperty(properties, "module.chestEsp", chestEspEnabled);
         fullBrightEnabled = booleanProperty(properties, "module.fullBright", fullBrightEnabled);
+        noWeatherEnabled = booleanProperty(properties, "module.noWeather", noWeatherEnabled);
         noKnockbackEnabled = booleanProperty(properties, "module.noKnockback", noKnockbackEnabled);
         killAuraEnabled = booleanProperty(properties, "module.killAura", killAuraEnabled);
         chestStealerEnabled = booleanProperty(properties, "module.chestStealer", chestStealerEnabled);
         freecamEnabled = booleanProperty(properties, "module.freecam", freecamEnabled);
         noVeloEnabled = booleanProperty(properties, "module.noVelo", noVeloEnabled);
         autoSprintEnabled = booleanProperty(properties, "module.autoSprint", autoSprintEnabled);
+        boatFlyEnabled = booleanProperty(properties, "module.boatFly", boatFlyEnabled);
+        elytraBoostEnabled = booleanProperty(properties, "module.elytraBoost", elytraBoostEnabled);
+        airJumpEnabled = booleanProperty(properties, "module.airJump", airJumpEnabled);
         jumpHeightEnabled = booleanProperty(properties, "module.jumpHeight", jumpHeightEnabled);
         xrayEnabled = booleanProperty(properties, "module.xray", xrayEnabled);
         healthBarsEnabled = booleanProperty(properties, "module.healthBars", healthBarsEnabled);
         autoArmorEnabled = booleanProperty(properties, "module.autoArmor", autoArmorEnabled);
         autoTotemEnabled = booleanProperty(properties, "module.autoTotem", autoTotemEnabled);
+        autoToolEnabled = booleanProperty(properties, "module.autoTool", autoToolEnabled);
         noSlowdownEnabled = booleanProperty(properties, "module.noSlowdown", noSlowdownEnabled);
         fastPlaceEnabled = booleanProperty(properties, "module.fastPlace", fastPlaceEnabled);
         deathMarkerEnabled = booleanProperty(properties, "module.deathMarker", deathMarkerEnabled);
@@ -1742,8 +2293,12 @@ public class WeikhackMod implements ClientModInitializer {
         chestEspEnderChests = booleanProperty(properties, "option.chestEspEnderChests", chestEspEnderChests);
         chestEspBarrels = booleanProperty(properties, "option.chestEspBarrels", chestEspBarrels);
         chestEspShulkers = booleanProperty(properties, "option.chestEspShulkers", chestEspShulkers);
+        for (XrayOre ore : XrayOre.values()) {
+            xrayOreOptions.put(ore, booleanProperty(properties, "option.xray." + ore.configKey(), isXrayOreEnabled(ore)));
+        }
         activeListEnabled = booleanProperty(properties, "option.activeList", activeListEnabled);
         speedMultiplier = floatProperty(properties, "speed.multiplier", speedMultiplier);
+        boatFlySpeedMultiplier = boatFlySpeedProperty(properties, "boatFly.speed", boatFlySpeedMultiplier);
         jumpHeightBlocks = jumpProperty(properties, "jump.blocks", jumpHeightBlocks);
         loadBinds(properties);
         removeLegacyDefaultBinds();
@@ -1865,6 +2420,16 @@ public class WeikhackMod implements ClientModInitializer {
         return value == null ? fallback : Boolean.parseBoolean(value);
     }
 
+    private static void resetDefaultXrayOres() {
+        setAllXrayOres(true);
+    }
+
+    private static void setAllXrayOres(boolean enabled) {
+        for (XrayOre ore : XrayOre.values()) {
+            xrayOreOptions.put(ore, enabled);
+        }
+    }
+
     private static float floatProperty(Properties properties, String key, float fallback) {
         try {
             return clampSpeed(Float.parseFloat(properties.getProperty(key, Float.toString(fallback))));
@@ -1881,8 +2446,20 @@ public class WeikhackMod implements ClientModInitializer {
         }
     }
 
+    private static float boatFlySpeedProperty(Properties properties, String key, float fallback) {
+        try {
+            return clampBoatFlySpeed(Float.parseFloat(properties.getProperty(key, Float.toString(fallback))));
+        } catch (NumberFormatException ignored) {
+            return fallback;
+        }
+    }
+
     private static float clampSpeed(float multiplier) {
         return Math.max(MIN_SPEED_MULTIPLIER, Math.min(MAX_SPEED_MULTIPLIER, Math.round(multiplier * 10.0F) / 10.0F));
+    }
+
+    private static float clampBoatFlySpeed(float multiplier) {
+        return Math.max(MIN_BOAT_FLY_SPEED, Math.min(MAX_BOAT_FLY_SPEED, Math.round(multiplier * 10.0F) / 10.0F));
     }
 
     private static float clampJumpBlocks(float blocks) {
@@ -1925,6 +2502,34 @@ public class WeikhackMod implements ClientModInitializer {
     private static void sendStatus(MinecraftClient client, String message) {
         if (client != null && client.player != null) {
             client.player.sendMessage(Text.literal(message), true);
+        }
+    }
+
+    public enum XrayOre {
+        DIAMOND("Diamond", "diamond"),
+        IRON("Iron", "iron"),
+        GOLD("Gold", "gold"),
+        LAPIS("Lapis", "lapis"),
+        EMERALD("Emerald", "emerald"),
+        REDSTONE("Redstone", "redstone"),
+        COAL("Coal", "coal"),
+        COPPER("Copper", "copper"),
+        ANCIENT_DEBRIS("Ancient Debris", "ancientDebris");
+
+        private final String label;
+        private final String configKey;
+
+        XrayOre(String label, String configKey) {
+            this.label = label;
+            this.configKey = configKey;
+        }
+
+        public String label() {
+            return label;
+        }
+
+        private String configKey() {
+            return configKey;
         }
     }
 
