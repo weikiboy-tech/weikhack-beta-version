@@ -7,10 +7,11 @@ Weikhack Beta Version 0.15 ist ein externer Fabric Client-Mod für Minecraft 1.2
 ## Features
 
 - Modernes Drag-and-drop ClickGUI über `Right Shift`, inklusive eigenem Config-Panel
-- Movement-Module wie Flight, Speed, NoFall, NoVelo, AutoSprint, JumpHeight und NoSlowdown
+- Movement-Module wie Flight, Speed, NoFall, SafeWalk, NoVelo, AutoSprint, JumpHeight und NoSlowdown
 - Render-Module wie Player ESP, Storage/Chest ESP, XRay, HealthBars und FullBright
 - Combat-Module wie NoKnockback und KillAura für Mobs und optional Spieler
 - Player-Module wie Chest Stealer, Freecam, AutoArmor, AutoTotem und FastPlace
+- Misc-Helfer wie Active List, Config-Panel und FakeLag
 - Chat-Befehle wie `.help`, `.bind`, `.unbind`, `.clearbinds`, `.saveconfig` und `.speed`
 - Eigene Binds können jederzeit frei erstellt werden, zum Beispiel mit `.bind flight g`
 - Config-Presets für PVE, PVP, Rage, Mining und Travel, jeweils mit FullBright als Basis
